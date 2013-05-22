@@ -17,11 +17,11 @@ public class Team
 	private Long nodeId;
 
 	@GraphProperty
-	@Indexed(unique = true)
+	@Indexed (unique = true)
 	private String name;
 
-	@RelatedTo(type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
-	private Set<Player> players = new HashSet<Player>();
+	@RelatedTo (type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
+	private final Set<Player> players = new HashSet<Player>();
 
 	public String getName()
 	{
@@ -30,7 +30,7 @@ public class Team
 
 	public void setName(String name)
 	{
-		this.name = name;
+		this.name = StringUtil.capitalizeFirstLetter(name);
 	}
 
 	public Long getNodeId()
@@ -42,4 +42,53 @@ public class Team
 	{
 		return players;
 	}
+
+	public void addPlayer(Player p)
+	{
+		players.add(p);
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Team [nodeId=" + nodeId + ", name=" + name + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((nodeId == null) ? 0 : nodeId.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Team other = (Team) obj;
+		if (name == null)
+		{
+			if (other.name != null)
+				return false;
+		}
+		else if (!name.equals(other.name))
+			return false;
+		if (nodeId == null)
+		{
+			if (other.nodeId != null)
+				return false;
+		}
+		else if (!nodeId.equals(other.nodeId))
+			return false;
+		return true;
+	}
+
 }

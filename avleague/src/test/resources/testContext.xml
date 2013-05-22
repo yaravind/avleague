@@ -10,7 +10,7 @@
 
 	<!-- Root Context: defines shared resources visible to all other web components -->
 	<!-- Enables the Spring MVC @Controller programming model -->
-	<context:component-scan base-package="com.aravind.avl.domain" />
+	<context:component-scan base-package="com.aravind.avl" />
 	<context:annotation-config />
 
 	<neo4j:config graphDatabaseService="graphDatabaseService" />

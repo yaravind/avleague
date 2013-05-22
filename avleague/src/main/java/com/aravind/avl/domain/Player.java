@@ -21,7 +21,7 @@ public class Player
 	@GraphId
 	private Long nodeId;
 
-	@Indexed(unique = true)
+	@Indexed (unique = true)
 	private String name;// Uses default index which is the name of the class.
 
 	@GraphProperty
@@ -41,9 +41,17 @@ public class Player
 
 	private static final transient Splitter NAME_SPLITTER = Splitter.on(" ").trimResults().omitEmptyStrings();
 
-	PlayedWith playedWith(Team t, Date during, League inLeague)
+	public PlayedWith playedWith(Team t, Date during, League inLeague)
 	{
 		PlayedWith playedWithTeamDuring = new PlayedWith(this, t, during, inLeague);
+		playedWith.add(playedWithTeamDuring);
+
+		return playedWithTeamDuring;
+	}
+
+	public PlayedWith playedWithAsCaptain(Team t, Date during, League inLeague)
+	{
+		PlayedWith playedWithTeamDuring = new PlayedWith(this, t, during, inLeague, true);
 		playedWith.add(playedWithTeamDuring);
 
 		return playedWithTeamDuring;
@@ -100,6 +108,49 @@ public class Player
 	public void setLastName(String lastName)
 	{
 		this.lastName = lastName;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Player [nodeId=" + nodeId + ", name=" + name + ", firstName=" + firstName + ", lastName=" + lastName + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((nodeId == null) ? 0 : nodeId.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Player other = (Player) obj;
+		if (name == null)
+		{
+			if (other.name != null)
+				return false;
+		}
+		else if (!name.equals(other.name))
+			return false;
+		if (nodeId == null)
+		{
+			if (other.nodeId != null)
+				return false;
+		}
+		else if (!nodeId.equals(other.nodeId))
+			return false;
+		return true;
 	}
 
 }
