@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aravind.avl.domain.League;
+import com.aravind.avl.domain.LeagueRepository;
 import com.aravind.avl.domain.Player;
 import com.aravind.avl.domain.PlayerRepository;
 import com.aravind.avl.domain.Team;
@@ -29,28 +30,38 @@ public class LeaguePopulator
 	@Autowired
 	private TeamRepository teamRepo;
 
+	@Autowired
+	private LeagueRepository leagueRepo;
+
 	@Transactional
-	public Collection<League> populateDatabase()
+	public Collection<League> populateDatabase(String importFileName, LeagueFactory.ImportProfile profile)
 	{
 		League l = null;
 		try
 		{
-			URI uri = Resources.getResource("Sri Bala Bharathi 2012 September League_2012-09-08_2012-09-15.properties").toURI();
+			URI uri = Resources.getResource(importFileName).toURI();
 			LOG.debug("Importing from: {}", uri);
-			l = new LeagueFactory().createLeague(new File(uri));
+			l = new LeagueFactory().createLeague(new File(uri), profile);
 			LOG.debug("Importing league: {}", l);
 
-			for (Team t: l.getTeams())
+			for (Team t : l.getTeams())
 			{
-				for (Player p: t.getPlayers())
+				for (Player p : t.getPlayers())
 				{
-					p.playedWith(t, l.getStartDate(), l);
+					if (p.isCaptain())
+					{
+						p.playedWithAsCaptain(t, l.getStartDate(), l);
+					}
+					else
+					{
+						p.playedWith(t, l.getStartDate(), l);
+					}
 				}
-
-				LOG.debug("Saving team: {}", t);
-				teamRepo.save(t);
-				LOG.debug("Saved team: {}", t);
 			}
+
+			LOG.debug("Saving league: {}", l);
+			leagueRepo.save(l);
+			LOG.debug("Saved league: {}", l);
 			return Lists.newArrayList(l);
 		}
 		catch (Exception e)

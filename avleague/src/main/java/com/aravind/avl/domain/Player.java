@@ -21,7 +21,7 @@ public class Player
 	@GraphId
 	private Long nodeId;
 
-	@Indexed (unique = true)
+	@Indexed(unique = true)
 	private String name;// Uses default index which is the name of the class.
 
 	@GraphProperty
@@ -32,12 +32,20 @@ public class Player
 	private String firstName;
 
 	@GraphProperty
+	private String email;
+
+	@GraphProperty
+	private String phoneNumber;
+
+	@GraphProperty
 	@Indexed
 	// (indexType = IndexType.FULLTEXT, indexName = "playerName")
 	private String lastName;
 
 	@RelatedToVia
 	Set<PlayedWith> playedWith = new HashSet<PlayedWith>();
+
+	private transient Boolean isCaptain;
 
 	private static final transient Splitter NAME_SPLITTER = Splitter.on(" ").trimResults().omitEmptyStrings();
 
@@ -153,4 +161,23 @@ public class Player
 		return true;
 	}
 
+	public void setEmail(String e)
+	{
+		email = e;
+	}
+
+	public void setPhoneNumber(String p)
+	{
+		phoneNumber = p;
+	}
+
+	public void setCaptain(Boolean b)
+	{
+		isCaptain = b;
+	}
+
+	public Boolean isCaptain()
+	{
+		return isCaptain == null ? Boolean.FALSE : isCaptain;
+	}
 }

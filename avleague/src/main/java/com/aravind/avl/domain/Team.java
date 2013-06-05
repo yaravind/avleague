@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.neo4j.graphdb.Direction;
+import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.Indexed;
@@ -17,10 +18,11 @@ public class Team
 	private Long nodeId;
 
 	@GraphProperty
-	@Indexed (unique = true)
+	@Indexed(unique = true)
 	private String name;
 
-	@RelatedTo (type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
+	@Fetch
+	@RelatedTo(type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
 	private final Set<Player> players = new HashSet<Player>();
 
 	public String getName()
