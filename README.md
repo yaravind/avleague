@@ -16,6 +16,7 @@ Required
 Local Setup
 -----------
 * Import the avlleague project to eclipse (Import>Git>Projects from Git>URI>) 
-* package tomcat7:run using m2eclipse. This runs embedded Tomcat 7
-* The app is accessible at http://localhost:9090/avl/
-* If running for first time then bootstrap the seed data by doing a HTTP GET to http://localhost:9090/avl/admin/populate
+* Create the db directory for graph as **C:\home\neo4j-db**
+* **package tomcat7:run** using m2eclipse. This runs embedded Tomcat 7
+* The app is accessible at **http://localhost:9090/avl/**
+* If running for first time then bootstrap the seed data by doing a HTTP GET to **http://localhost:9090/avl/admin/populate**
