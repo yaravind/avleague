@@ -1,5 +1,6 @@
 package com.aravind.avl.domain;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,12 +19,17 @@ public class Team
 	private Long nodeId;
 
 	@GraphProperty
-	@Indexed(unique = true)
+	@Indexed (unique = true)
 	private String name;
 
 	@Fetch
-	@RelatedTo(type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
+	@RelatedTo (type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
 	private final Set<Player> players = new HashSet<Player>();
+
+	public Team()
+	{
+		System.err.println("Created team");
+	}
 
 	public String getName()
 	{
@@ -40,9 +46,15 @@ public class Team
 		return nodeId;
 	}
 
-	public Iterable<Player> getPlayers()
+	public Collection<Player> getPlayers()
 	{
 		return players;
+	}
+
+	public void setPlayers(Set<Player> plyrs)
+	{
+		System.err.println("called set plrs");
+		players.addAll(plyrs);
 	}
 
 	public void addPlayer(Player p)

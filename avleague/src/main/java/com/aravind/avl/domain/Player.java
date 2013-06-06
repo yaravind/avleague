@@ -21,7 +21,7 @@ public class Player
 	@GraphId
 	private Long nodeId;
 
-	@Indexed(unique = true)
+	@Indexed (unique = true)
 	private String name;// Uses default index which is the name of the class.
 
 	@GraphProperty
@@ -48,6 +48,11 @@ public class Player
 	private transient Boolean isCaptain;
 
 	private static final transient Splitter NAME_SPLITTER = Splitter.on(" ").trimResults().omitEmptyStrings();
+
+	public Player()
+	{
+		System.err.println("created new player");
+	}
 
 	public PlayedWith playedWith(Team t, Date during, League inLeague)
 	{
