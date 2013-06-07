@@ -27,9 +27,7 @@ public class Team
 	private final Set<Player> players = new HashSet<Player>();
 
 	public Team()
-	{
-		System.err.println("Created team");
-	}
+	{}
 
 	public String getName()
 	{
@@ -53,7 +51,6 @@ public class Team
 
 	public void setPlayers(Set<Player> plyrs)
 	{
-		System.err.println("called set plrs");
 		players.addAll(plyrs);
 	}
 

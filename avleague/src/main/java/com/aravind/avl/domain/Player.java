@@ -50,9 +50,7 @@ public class Player
 	private static final transient Splitter NAME_SPLITTER = Splitter.on(" ").trimResults().omitEmptyStrings();
 
 	public Player()
-	{
-		System.err.println("created new player");
-	}
+	{}
 
 	public PlayedWith playedWith(Team t, Date during, League inLeague)
 	{
