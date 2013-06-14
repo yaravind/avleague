@@ -2,11 +2,14 @@ package com.aravind.avl.domain;
 
 import static com.aravind.avl.domain.StringUtil.capitalizeFirstLetter;
 
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.Indexed;
@@ -42,10 +45,29 @@ public class Player
 	// (indexType = IndexType.FULLTEXT, indexName = "playerName")
 	private String lastName;
 
+	@Fetch
 	@RelatedToVia
 	Set<PlayedWith> playedWith = new HashSet<PlayedWith>();
 
-	private transient Boolean isCaptain;
+	/**
+	 * We doesn't want this to be saved in the Player nodes as this is a property of PlayedWith relationship.
+	 */
+	@Transient
+	private Boolean captain;
+
+	public static final Comparator<Player> NAME_CASE_INSENSITIVE_COMPARATOR = new Comparator<Player>()
+	{
+		@Override
+		public int compare(Player o1, Player o2)
+		{
+			return o1.getName().compareToIgnoreCase(o2.getName());
+		}
+	};
+
+	public Boolean getCaptain()
+	{
+		return captain;
+	}
 
 	private static final transient Splitter NAME_SPLITTER = Splitter.on(" ").trimResults().omitEmptyStrings();
 
@@ -121,6 +143,21 @@ public class Player
 		this.lastName = lastName;
 	}
 
+	public String getEmail()
+	{
+		return email;
+	}
+
+	public String getPhoneNumber()
+	{
+		return phoneNumber;
+	}
+
+	public Set<PlayedWith> getPlayedWith()
+	{
+		return playedWith;
+	}
+
 	@Override
 	public String toString()
 	{
@@ -176,11 +213,11 @@ public class Player
 
 	public void setCaptain(Boolean b)
 	{
-		isCaptain = b;
+		captain = b;
 	}
 
 	public Boolean isCaptain()
 	{
-		return isCaptain == null ? Boolean.FALSE : isCaptain;
+		return captain == null ? Boolean.FALSE : captain;
 	}
 }

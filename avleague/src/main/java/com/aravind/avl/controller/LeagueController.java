@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.neo4j.helpers.collection.IteratorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.aravind.avl.domain.League;
+import com.aravind.avl.domain.LeagueRepository;
 import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 import com.aravind.avl.service.LeagueFactory;
@@ -30,7 +34,39 @@ public class LeagueController
 	@Autowired
 	private TeamRepository teamRepo;
 
-	@RequestMapping(value = "/admin/populate", method = RequestMethod.GET)
+	@Autowired
+	private LeagueRepository leagueRepo;
+
+	@RequestMapping (value = "/leagues/new", method = RequestMethod.GET)
+	public String newLeague(Model model)
+	{
+		League l = new League();
+		model.addAttribute("newLeague", l);
+		return "/leagues/new";
+	}
+
+	@RequestMapping (value = "/leagues/list", method = RequestMethod.GET)
+	public String list(Model model)
+	{
+		Iterable<League> all = leagueRepo.findAll();
+		model.addAttribute("leagues", IteratorUtil.asCollection(all));
+
+		return "/leagues/list";
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/new", method = RequestMethod.POST)
+	public String newLeague(@ModelAttribute League newLeague)
+	{
+		LOG.debug("Creating new league: {}", newLeague);
+		// Stores the given entity in the graph, if the entity is already attached to the graph, the node is updated,
+		// otherwise a new node is created.
+		leagueRepo.save(newLeague);
+
+		return "redirect:list";
+	}
+
+	@RequestMapping (value = "/admin/populate", method = RequestMethod.GET)
 	public String populateDatabase(Model model)
 	{
 		LOG.debug("Before populating the graph db.");
@@ -39,8 +75,8 @@ public class LeagueController
 		profile.emailColumnNum = 11;
 		profile.phoneColumnNum = 12;
 
-		Collection<League> june2012 = populator.populateDatabase("Sri Bala Bharathi 2012 June League_2012-06-16_2012-06-17.properties",
-				profile);
+		Collection<League> june2012 = populator.populateDatabase(
+				"Sri Bala Bharathi 2012 June League_2012-06-16_2012-06-17.properties", profile);
 		LOG.debug("After populating the graph db.");
 
 		LOG.debug("Before populating the graph db.");

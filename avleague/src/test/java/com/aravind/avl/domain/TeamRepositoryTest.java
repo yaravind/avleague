@@ -13,8 +13,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration({ "/testContext.xml" })
+@RunWith (SpringJUnit4ClassRunner.class)
+@ContextConfiguration ({ "/testContext.xml"})
 @Transactional
 public class TeamRepositoryTest
 {
@@ -28,6 +28,7 @@ public class TeamRepositoryTest
 	Neo4jOperations template;
 
 	Team t;
+
 	Player p;
 
 	@Before
@@ -54,6 +55,20 @@ public class TeamRepositoryTest
 		// template.save(playedWith);
 
 		assertNotNull(playedWith.getNodeId());
-		System.err.println(t.getPlayers());
+		assertNotNull(t.getPlayers());
+	}
+
+	@Test
+	public void testFindByName()
+	{
+		teamRepo.save(t);
+		assertNotNull(t.getNodeId());
+
+		Team team = teamRepo.findByName("Alpharetta One");
+		assertNotNull(team);
+
+		// TODO to add case insensitive search
+		// team = teamRepo.findByName("alpharetta One");
+		// assertNotNull(team);
 	}
 }

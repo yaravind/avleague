@@ -15,32 +15,39 @@
 
 <h1>${newTeamName}</h1>
 
-<%-- <%
-java.util.List<com.aravind.avl.controller.PlayerView> o = (java.util.List<com.aravind.avl.controller.PlayerView>) request.getAttribute("playingEight");
-java.util.Iterator<com.aravind.avl.controller.PlayerView> it= o.iterator();
-while(it.hasNext())
-{
-	com.aravind.avl.controller.PlayerView pv=it.next();
-	out.println(pv.getName());
-	out.println("<br/>"+pv.getPlayerId());
-}
-%>
- --%>
 <ul>
 	<c:forEach items="${playingEight}" var="p">
 		<li>
 			<c:choose>
-			<c:when test="${p.captain}">
-				<strong>${p.name} (Captain)</strong>
-			</c:when>
-			<c:otherwise>
-			${p.name}
-			</c:otherwise>
+				<c:when test="${p.captain}">
+					<strong>${p.name} (Captain)</strong>
+				</c:when>
+				<c:otherwise>
+					${p.name}
+				</c:otherwise>
 			</c:choose>
 		</li>
-	</c:forEach>
+	</c:forEach>					
 </ul>
-<form action="end" method="POST">
+<p>Found similar players. May be he/she already played in one of our earlier leagues. Please confirm the correct player.</p>	
+<form action="end" method="POST">	
+	<ul>
+		<c:forEach var="entry" items="${matchedPlayers}">
+			<li>
+				<input type="checkbox" name="players" value="${playerView.playerId}" />${entry.key}
+				<ul>
+					<c:forEach var="matchedPlayer" items="${entry.value}">
+				 		<li><input type="checkbox" name="players" value="${matchedPlayer.nodeId}" /> ${matchedPlayer.name}. Played with 
+				 			<c:forEach var="playedRelation" items="${matchedPlayer.playedWith}">
+				 				<em>${playedRelation.team.name}</em> during <em><fmt:formatDate type="date" value="${playedRelation.during}" /></em>.
+				 			</c:forEach>
+				 		</li>
+					</c:forEach>
+				</ul>
+			</li>
+		</c:forEach>		
+	</ul>
+
 <input type="submit" value="Submit">
 </form>
 

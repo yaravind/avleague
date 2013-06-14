@@ -1,10 +1,12 @@
 package com.aravind.avl.domain;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.neo4j.helpers.collection.IteratorUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.neo4j.conversion.EndResult;
 import org.springframework.data.neo4j.conversion.Handler;
@@ -12,11 +14,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.aravind.avl.domain.Player;
-import com.aravind.avl.domain.PlayerRepository;
-
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration({ "/testContext.xml" })
+@RunWith (SpringJUnit4ClassRunner.class)
+@ContextConfiguration ({ "/testContext.xml"})
 @Transactional
 public class PlayerRepositoryTest
 {
@@ -105,14 +104,19 @@ public class PlayerRepositoryTest
 		p1.setName("Aravind Y");
 		save = repo.save(p1);
 
-		EndResult<Player> players = repo.findAllByQuery("name", "A*");
-		players.handle(new Handler<Player>() {
+		EndResult<Player> players = repo.findAllByQuery("name", "Aravind Y".substring(0, 4));
+		players.handle(new Handler<Player>()
+		{
 			@Override
 			public void handle(Player value)
 			{
 				assertNotNull(value.getNodeId());
 			}
 		});
+
+		Iterable<Player> findByName = repo.findByNameLike("Aravind*");
+		assertNotNull(findByName);
+		assertEquals(2, IteratorUtil.count(findByName));
 	}
 
 	@Test

@@ -27,4 +27,6 @@ public interface PlayerRepository extends GraphRepository<Player>
 	 * @return <code>null</code> if no matches found
 	 */
 	Player findByName(String fullName);
+
+	Iterable<Player> findByNameLike(String partialName);
 }

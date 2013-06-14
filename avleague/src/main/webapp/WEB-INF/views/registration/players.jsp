@@ -47,12 +47,13 @@ out.println(o);
 				<c:forEach items="${players}" var="playerView">
 					<tr>
 						<td><input type="checkbox" name="players"
-							value="${playerView.playerId}" />${playerView.name}</td>
+							value="${playerView.nodeId}" />${playerView.name}</td>
 						<td><input type="radio" name="isCaptain" value="${playerView.name}"/></td>
 						<td>
-							<c:forEach items="${playerView.participatedInLeagueNames}" var="leagueName">					
+							Show list of previous leagues that this player has played
+							<%-- TODO <c:forEach items="${playerView.participatedInLeagueNames}" var="leagueName">					
 								${leagueName}<br/>
-							</c:forEach>
+							</c:forEach> --%>
 						</td>
 					</tr>
 				</c:forEach>
@@ -62,7 +63,8 @@ out.println(o);
 				<tr>
 					<td colspan="2"><label for="newPlayer1"> Full Name: <input
 							type="text" name="newPlayer1" />
-					</label></td>
+					</label>
+					</td>
 					<td><input type="radio" name="isCaptain" value="${playerView.name}" onclick="handleClick(this, 1);"/></td>
 				</tr>
 				<tr>

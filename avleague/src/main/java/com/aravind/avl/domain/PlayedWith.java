@@ -3,6 +3,7 @@ package com.aravind.avl.domain;
 import java.util.Date;
 
 import org.springframework.data.neo4j.annotation.EndNode;
+import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.RelationshipEntity;
@@ -17,13 +18,13 @@ public class PlayedWith
 	@StartNode
 	Player player;
 
+	@Fetch
 	@EndNode
 	Team team;
 
-	// TODO transient for now
-	private transient League inLeague;
+	private League inLeague;
 
-	@GraphProperty
+	@GraphProperty (propertyType = Long.class)
 	private Date during;
 
 	@GraphProperty
@@ -96,7 +97,8 @@ public class PlayedWith
 	@Override
 	public String toString()
 	{
-		return "PlayedWith [nodeId=" + nodeId + ", player=" + player + ", team=" + team + ", inLeague=" + inLeague + "]";
+		return "PlayedWith [nodeId=" + nodeId + ", player=" + player.getName() + ", team=" + team.getName() + ", inLeague="
+				+ inLeague + "]";
 	}
 
 	@Override

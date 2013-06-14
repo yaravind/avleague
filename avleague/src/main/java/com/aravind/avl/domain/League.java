@@ -9,6 +9,7 @@ import java.util.Set;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
+import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
 
@@ -18,37 +19,22 @@ public class League implements Comparable<League>
 	@GraphId
 	private Long nodeId;
 
+	@Indexed (unique = true)
 	@GraphProperty
 	private String name;
 
-	public void setName(String name)
-	{
-		this.name = name;
-	}
-
-	public void setStartDate(Date startDate)
-	{
-		this.startDate = startDate;
-	}
-
-	public void setEndDate(Date endDate)
-	{
-		this.endDate = endDate;
-	}
-
-	@GraphProperty
+	@GraphProperty (propertyType = Long.class)
 	private Date startDate;
 
-	@GraphProperty
+	@GraphProperty (propertyType = Long.class)
 	private Date endDate;
 
 	@Fetch
-	@RelatedTo(type = "CONTESTED_IN", direction = INCOMING)
+	@RelatedTo (type = "CONTESTED_IN", direction = INCOMING)
 	private final Set<Team> teams = new HashSet<Team>();
 
 	public League()
-	{
-	}
+	{}
 
 	public League(String leagueName, Date leagueStartDate, Date leagueEndDate)
 	{
@@ -85,6 +71,21 @@ public class League implements Comparable<League>
 	public Date getEndDate()
 	{
 		return endDate;
+	}
+
+	public void setName(String name)
+	{
+		this.name = name;
+	}
+
+	public void setStartDate(Date startDate)
+	{
+		this.startDate = startDate;
+	}
+
+	public void setEndDate(Date endDate)
+	{
+		this.endDate = endDate;
 	}
 
 	@Override
