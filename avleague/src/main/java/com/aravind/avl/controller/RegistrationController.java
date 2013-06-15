@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
+import com.aravind.avl.domain.PlayedWith;
 import com.aravind.avl.domain.Player;
 import com.aravind.avl.domain.PlayerRepository;
 import com.aravind.avl.domain.Team;
@@ -37,7 +38,7 @@ import com.google.common.collect.Maps;
 
 @Controller
 @RequestMapping ("/registration")
-@SessionAttributes ({ "teamName", "designatedCaptain", "playingEight", "matchedPlayers"})
+@SessionAttributes ({ "teamName", "designatedCaptain", "playerList", "matchedPlayers"})
 public class RegistrationController
 {
 	private transient final Logger LOG = LoggerFactory.getLogger(getClass());
@@ -83,27 +84,31 @@ public class RegistrationController
 		return "/registration/leagues";
 	}
 
+	@Transactional
 	@RequestMapping (value = "/selectTeam", method = RequestMethod.POST)
 	public String selectTeam(@RequestParam Long selectedTeam, Model model)
 	{
-		String q = "START t=node({teamId}) MATCH player-[:PLAYED_WITH_TEAM]->t-[:CONTESTED_IN]->league WITH player AS player, league.startDate AS startDate, league.name AS leagueName ORDER BY startDate RETURN player,  collect(leagueName) AS leagueNames";
+		String q = "START t=node({teamId}) MATCH player-[:PLAYED_WITH_TEAM]->t-[:CONTESTED_IN]->league WITH player AS player, league.startDate AS startDate, league.name AS leagueName ORDER BY startDate RETURN player,  collect(leagueName) AS allParticipatedLeagues";
 
 		LOG.debug("Participated as team {} in previous league", selectedTeam);
 		Map<String, Object> params = Maps.newHashMap();
 		params.put("teamId", selectedTeam);
 
 		Result<Map<String, Object>> result = template.query(q, params);
+
 		final List<Player> players = new ArrayList<Player>();
 
 		result.handle(new Handler<Map<String, Object>>()
 		{
 			@Override
-			public void handle(Map<String, Object> value)
+			public void handle(Map<String, Object> row)
 			{
-				LOG.debug("Team participated in the following leagues {}", value);
 				// They cypher just returns a NodeProxy. You need to use convert to make it a domain entity
-				Player player = template.convert(value.get("player"), Player.class);
-				System.err.println(value.get("leagueNames"));// returns List<String>
+				Player player = template.convert(row.get("player"), Player.class);
+
+				// row.get("allParticipatedLeagues")) returns List<String>
+				LOG.debug("All leagues the {} had participated in: {}", player, row.get("allParticipatedLeagues"));
+
 				players.add(player);
 			}
 		});
@@ -113,28 +118,152 @@ public class RegistrationController
 		return "registration/players";
 	}
 
+	@Transactional
 	@RequestMapping (value = "/newTeam", method = RequestMethod.POST)
-	public String newdTeam(@RequestParam String newTeamName, @RequestParam ("players") List<String> ids,
+	public String newTeam(@RequestParam String newTeamName, @RequestParam ("players") List<String> ids,
 			@RequestParam ("isCaptain") String captainName, @RequestParam ("newPlayer1") String newPlayer1,
 			@RequestParam ("newPlayer2") String newPlayer2, @RequestParam ("newPlayer3") String newPlayer3,
 			@RequestParam ("newPlayer4") String newPlayer4, @RequestParam ("newPlayer5") String newPlayer5,
 			@RequestParam ("newPlayer6") String newPlayer6, @RequestParam ("newPlayer7") String newPlayer7,
 			@RequestParam ("newPlayer8") String newPlayer8, Model model)
 	{
-		LOG.debug("Selected players from existing list: {}", ids);
-		LOG.debug("Selected Captain: {}", captainName);
-		LOG.debug("New player: {}", newPlayer1);
-
-		List<Player> playingEight = Lists.newArrayList();
-		List<String> newPlayers = Lists.newArrayList();
+		List<Player> playerList = Lists.newArrayList();
 
 		if (StringUtils.isNotBlank(newTeamName))
 		{
 			LOG.debug("New name provided for the team: {}", newTeamName);
 			model.addAttribute("teamName", newTeamName.replaceAll(newTeamName, " "));
 			Team existingTeam = teamRepo.findByName(newTeamName);
-			LOG.error("Team with the name {} already exists: {}", newTeamName, existingTeam);
+			LOG.error("Team with the name {} already exists? {}", newTeamName, existingTeam != null);
 		}
+		List<String> newPlayers = newPlayers(newPlayer1, newPlayer2, newPlayer3, newPlayer4, newPlayer5, newPlayer6, newPlayer7,
+				newPlayer8);
+
+		// handle new players
+		Map<String, Collection<Player>> matchedPlayers = Maps.newTreeMap();
+
+		for (String np: newPlayers)
+		{
+			Collection<Player> matchList = tryNameMatch(np);
+			if (matchList.isEmpty())
+			{
+				LOG.debug("No match found for name {}", np);
+				addNewPlayer(np, captainName, playerList);
+			}
+			else
+			{
+				matchedPlayers.put(np, matchList);
+			}
+		}
+
+		// handle existing players
+		addExistingPlayers(ids, captainName, playerList);
+
+		model.addAttribute("teamName", newTeamName);
+		model.addAttribute("designatedCaptain", captainName);
+		model.addAttribute("matchedPlayers", matchedPlayers);
+		model.addAttribute("playerList", playerList);
+
+		return "registration/confirmation";
+	}
+
+	/**
+	 * @param teamName binding from @SessionAttribute
+	 * @param designatedCaptain binding from @SessionAttribute
+	 * @param playerList binding from @SessionAttribute
+	 * @param matchedPlayers binding from @SessionAttribute
+	 */
+	@Transactional
+	@RequestMapping (value = "/end", method = RequestMethod.POST)
+	public String end(@ModelAttribute ("teamName") String teamName, @ModelAttribute ("designatedCaptain") String designatedCaptain,
+			@RequestParam ("playerIds") List<String> playerIds, @ModelAttribute ("playerList") List<Player> playerList,
+			@ModelAttribute ("matchedPlayers") TreeMap<String, Collection<Player>> matchedPlayers, Model model)
+	{
+		Set<Player> pls = new TreeSet<Player>(Player.NAME_CASE_INSENSITIVE_COMPARATOR);
+
+		// override playing eight if necessary
+		for (String id: playerIds)
+		{
+			for (Map.Entry<String, Collection<Player>> cp: matchedPlayers.entrySet())
+			{
+				for (Player p: cp.getValue())
+				{
+					if (p.getNodeId().toString().equals(id))
+					{
+						LOG.debug("Adding EXISTING [{}] to playing eight.", p.getName());
+						pls.add(p);
+					}
+				}
+			}
+		}
+		pls.addAll(playerList);
+		model.addAttribute("playerList", Lists.newArrayList(pls));
+
+		League currentLeague = leagueRepo.findCurrentLeague();
+
+		Team team = teamRepo.findByName(teamName);
+		if (team == null)
+		{
+			// new team
+			team = new Team();
+			team.setName(teamName);
+
+			LOG.debug("{} hasn't participated in the earlier leagues, so create new and relate to the current league {}", team,
+					currentLeague);
+			teamRepo.save(team);
+
+			for (Player p: pls)
+			{
+				if (p.getNodeId() == null)
+				{
+					LOG.debug("Before saving new {}", p);
+					playerRepo.save(p);
+					LOG.debug("After saving new {}", p);
+				}
+				createPlayedWithRelation(currentLeague, team, p);
+			}
+		}
+		else
+		{
+			LOG.debug("{} participated in the earlier leagues, so just has to relate to the current league {}", team, currentLeague);
+
+			for (Player p: pls)
+			{
+				createPlayedWithRelation(currentLeague, team, p);
+			}
+		}
+
+		LOG.debug("Final players: {}", team.getPlayers());
+
+		currentLeague.addTeam(team);
+
+		LOG.debug("Before saving final Team {}", team);
+		leagueRepo.save(currentLeague);
+		LOG.debug("After saving final Team {}", team);
+
+		return "registration/success";
+	}
+
+	private PlayedWith createPlayedWithRelation(League currentLeague, Team team, Player p)
+	{
+		PlayedWith playedWith = template.createRelationshipBetween(p, team, PlayedWith.class, "PLAYED_WITH_TEAM", true);
+		playedWith.setDuring(currentLeague.getStartDate());
+		playedWith.setInLeague(currentLeague);
+		playedWith.setPlayer(p);
+		playedWith.setTeam(team);
+		playedWith.setAsCaptain(p.isCaptain());
+
+		template.save(playedWith);
+
+		team.addPlayer(p);
+
+		return playedWith;
+	}
+
+	private List<String> newPlayers(String newPlayer1, String newPlayer2, String newPlayer3, String newPlayer4, String newPlayer5,
+			String newPlayer6, String newPlayer7, String newPlayer8)
+	{
+		List<String> newPlayers = Lists.newArrayList();
 		if (StringUtils.isNotBlank(newPlayer1))
 		{
 			newPlayers.add(newPlayer1);
@@ -167,32 +296,7 @@ public class RegistrationController
 		{
 			newPlayers.add(newPlayer8);
 		}
-
-		// handle new players
-		Map<String, Collection<Player>> matchedPlayers = Maps.newTreeMap();
-
-		for (String np: newPlayers)
-		{
-			Collection<Player> matches = tryNameMatch(np);
-			if (matches.isEmpty())
-			{
-				addNewPlayer(np, captainName, playingEight);
-			}
-			else
-			{
-				matchedPlayers.put(np, matches);
-			}
-		}
-
-		// handle existing players
-		addExistingPlayers(ids, captainName, playingEight);
-
-		model.addAttribute("newTeamName", newTeamName);
-		model.addAttribute("designatedCaptain", captainName);
-		model.addAttribute("matchedPlayers", matchedPlayers);
-		model.addAttribute("playingEight", playingEight);
-
-		return "registration/confirmation";
+		return newPlayers;
 	}
 
 	private void addExistingPlayers(List<String> ids, String isCaptain, List<Player> playingEight)
@@ -200,7 +304,7 @@ public class RegistrationController
 		for (String id: ids)
 		{
 			Player p = playerRepo.findOne(Long.valueOf(id));
-			LOG.debug("Retrieved {}", p);
+			LOG.debug("Adding EXISTING [{}] to potential final list.", p);
 
 			if (p.getName().equalsIgnoreCase(isCaptain))
 			{
@@ -218,6 +322,7 @@ public class RegistrationController
 
 		if (newPlyr.getName().equalsIgnoreCase(isCaptain))
 		{
+			LOG.debug("Adding NEW [{}] to potential final list.", newPlyr);
 			newPlyr.setCaptain(true);
 			LOG.debug("Marking [{}] as captain", newPlyr.getName());
 		}
@@ -235,12 +340,7 @@ public class RegistrationController
 		Collection<Player> players = IteratorUtil.asCollection(result);
 		if (players.size() > 0)
 		{
-			LOG.debug("[{}] already participated in earlier leagues. Exact match by First Name.", newPlayer);
-			for (Player pl: players)
-			{
-				LOG.debug("Matched player(s): {}", pl);
-				System.err.println(pl.getPlayedWith());
-			}
+			LOG.debug("Found exact match by First Name: [{}]", players);
 			return players;
 		}
 
@@ -248,12 +348,7 @@ public class RegistrationController
 		players = IteratorUtil.asCollection(result);
 		if (players.size() > 0)
 		{
-			LOG.debug("[{}] already participated in earlier leagues. Exact match by Last Name.", newPlayer);
-			for (Player pl: players)
-			{
-				LOG.debug("Matched player(s): {}", pl);
-				System.err.println(pl.getPlayedWith());
-			}
+			LOG.debug("Found exact match by Last Name: [{}]", players);
 			return players;
 		}
 
@@ -267,71 +362,9 @@ public class RegistrationController
 		players = IteratorUtil.asCollection(result);
 		if (players.size() > 0)
 		{
-			LOG.debug("[{}] already participated in earlier leagues.  Partial match {} on full name.", newPlayer, first3Characters);
-			for (Player pl: players)
-			{
-				LOG.debug("Matched player(s): {}", pl);
-				System.err.println(pl.getPlayedWith());
-			}
+			LOG.debug("Found partial match (Search string: {}) on Full Name: [{}]", searchString, players);
 			return players;
 		}
 		return Collections.emptyList();
-	}
-
-	/**
-	 * @param teamName binding from @SessionAttribute
-	 * @param designatedCaptain binding from @SessionAttribute
-	 * @param playingEight binding from @SessionAttribute
-	 * @param model
-	 * @return
-	 */
-	@RequestMapping (value = "/end", method = RequestMethod.POST)
-	public String end(@ModelAttribute ("teamName") String teamName, @ModelAttribute ("designatedCaptain") String designatedCaptain,
-			@RequestParam ("players") List<String> ids, @ModelAttribute ("playingEight") List<Player> playingEight,
-			@ModelAttribute ("matchedPlayers") TreeMap<String, Collection<Player>> matchedPlayers, Model model)
-	{
-		LOG.debug("Team Name: {}", teamName);
-		LOG.debug("Captain Name: {}", designatedCaptain);
-
-		Set<Player> pls = new TreeSet<Player>(Player.NAME_CASE_INSENSITIVE_COMPARATOR);
-
-		for (String id: ids)
-		{
-			for (Map.Entry<String, Collection<Player>> cp: matchedPlayers.entrySet())
-			{
-				for (Player p: cp.getValue())
-				{
-					if (p.getNodeId().toString().equals(id))
-					{
-						LOG.debug("Adding {} to playing eight.", p.getName());
-						pls.add(p);
-					}
-				}
-			}
-		}
-		pls.addAll(playingEight);
-		model.addAttribute("playingEight", Lists.newArrayList(pls));
-		Team team = teamRepo.findByName(teamName);
-		if (team == null)
-		{
-			team = new Team();
-			team.setName(teamName);
-			team.setPlayers(pls);
-
-			for (Player p: team.getPlayers())
-			{
-				// TODO find league and derive start date
-				// p.playedWith(team, during, inLeague)
-			}
-			teamRepo.save(team);
-		}
-		else
-		{
-
-		}
-
-		LOG.debug("Final Team {}", pls);
-
-		return "registration/success";
 	}
 }

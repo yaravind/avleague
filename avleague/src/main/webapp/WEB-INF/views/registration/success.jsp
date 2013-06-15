@@ -5,32 +5,26 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
-<title>${newTeamName}. Registration complete.</title>
+<title>${teamName}. Registration complete.</title>
 </head>
 <body>
-<%-- <%
-java.util.List<com.aravind.avl.domain.Player> o = (java.util.List<com.aravind.avl.domain.Player>) request.getAttribute("playingEight");
-java.util.Iterator<com.aravind.avl.domain.Player> it= o.iterator();
-while(it.hasNext())
-{
-	com.aravind.avl.domain.Player pv=it.next();
-	out.println(pv.getName()+"&nbsp;"+pv.getNodeId()+"<br/>");
-}
-%> --%>
-<ul>
-	<c:forEach items="${playingEight}" var="p">
-		<li>
-			<c:choose>
-				<c:when test="${p.captain}">
-					<strong>${p.name} (Captain)</strong>
-				</c:when>
-				<c:otherwise>
+	<a href="/avl">Home</a>
+	<br />
+	<ul>
+		<c:forEach items="${playerList}" var="p">
+			<li><c:choose>
+					<c:when test="${p.captain}">
+						<strong>${p.name} (Captain)</strong>
+					</c:when>
+					<c:otherwise>
 					${p.name}
 				</c:otherwise>
-			</c:choose>
-		</li>
-	</c:forEach>					
-</ul>
-<p>Congratulations <strong>${designatedCaptain}</strong>. You have successfully registered your <strong>${newTeamName}</strong> team. Please check your email on next steps.</p>
+				</c:choose></li>
+		</c:forEach>
+	</ul>
+	<p>
+		Congratulations <strong>${designatedCaptain}</strong>. You have successfully registered your <strong>${teamName}</strong> team. Please check your
+		email on next steps.
+	</p>
 </body>
 </html>

@@ -94,6 +94,16 @@ public class PlayedWith
 		return nodeId;
 	}
 
+	public boolean isAsCaptain()
+	{
+		return asCaptain;
+	}
+
+	public void setAsCaptain(boolean asCaptain)
+	{
+		this.asCaptain = asCaptain;
+	}
+
 	@Override
 	public String toString()
 	{

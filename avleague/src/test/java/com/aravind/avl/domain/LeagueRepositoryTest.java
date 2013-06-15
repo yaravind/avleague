@@ -16,8 +16,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-@RunWith (SpringJUnit4ClassRunner.class)
-@ContextConfiguration ({ "/testContext.xml"})
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration({ "/testContext.xml" })
 @Transactional
 public class LeagueRepositoryTest
 {
@@ -25,22 +25,36 @@ public class LeagueRepositoryTest
 	LeagueRepository repo;
 
 	@Test
-	public void saveLeague()
+	public void saveLeague() throws ParseException
 	{
+		SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+
 		League l = new League();
-		l.setStartDate(new Date());
-		l.setEndDate(new Date());
+		Date startDate = df.parse("01/03/2013");
+		l.setStartDate(startDate);
+		l.setEndDate(startDate);
 		l.setName("name");
 
-		Team t = new Team();
-		t.setName("team");
+		Team t1 = new Team();
+		t1.setName("team 1");
 
 		Player p = new Player();
 		p.setName("Aravind Yarram");
 
-		t.addPlayer(p);
-		p.playedWith(t, l.getStartDate(), l);
-		l.addTeam(t);
+		t1.addPlayer(p);
+		p.playedWith(t1, l.getStartDate(), l);
+
+		Team t2 = new Team();
+		t2.setName("team 2");
+
+		l.addTeam(t1);
+		l.addTeam(t2);
+
+		Match m = l.conductMatch(t1, t2);
+		assertNotNull(m);
+
+		df = new SimpleDateFormat("yyyy-MM");
+		assertEquals("Match name maker test", t1.getName() + "-vs.-" + t2.getName(), m.getName());
 
 		l = repo.save(l);
 		assertNotNull(l);
@@ -49,7 +63,7 @@ public class LeagueRepositoryTest
 		Iterable<League> all = repo.findAll();
 		Set<League> sortedLeagues = new TreeSet<League>();
 
-		for (League l1: all)
+		for (League l1 : all)
 		{
 			sortedLeagues.add(l1);
 		}
@@ -75,6 +89,6 @@ public class LeagueRepositoryTest
 
 		League currentLeague = repo.findCurrentLeague();
 		assertNotNull(currentLeague);
-		assertEquals("in year 2013", currentLeague.getName());
+		assertEquals("Most recent league should be returned", "in year 2013", currentLeague.getName());
 	}
 }

@@ -19,28 +19,41 @@ public class League implements Comparable<League>
 	@GraphId
 	private Long nodeId;
 
-	@Indexed (unique = true)
+	@Indexed(unique = true)
 	@GraphProperty
 	private String name;
 
-	@GraphProperty (propertyType = Long.class)
+	@Indexed
+	@GraphProperty(propertyType = Long.class)
 	private Date startDate;
 
-	@GraphProperty (propertyType = Long.class)
+	@Indexed
+	@GraphProperty(propertyType = Long.class)
 	private Date endDate;
 
 	@Fetch
-	@RelatedTo (type = "CONTESTED_IN", direction = INCOMING)
-	private final Set<Team> teams = new HashSet<Team>();
+	@RelatedTo(type = "CONTESTED_IN", direction = INCOMING)
+	private Set<Team> teams = new HashSet<Team>();
+
+	@RelatedTo(type = "PART_OF_LEAGUE", direction = INCOMING)
+	private Set<Match> matches = new HashSet<Match>();
 
 	public League()
-	{}
+	{
+	}
 
 	public League(String leagueName, Date leagueStartDate, Date leagueEndDate)
 	{
 		name = leagueName;
 		startDate = leagueStartDate;
 		endDate = leagueEndDate;
+	}
+
+	public Match conductMatch(Team teamA, Team teamB)
+	{
+		Match m = new Match(teamA, teamB, this);
+		matches.add(m);
+		return m;
 	}
 
 	public void addTeam(Team t)
@@ -86,6 +99,16 @@ public class League implements Comparable<League>
 	public void setEndDate(Date endDate)
 	{
 		this.endDate = endDate;
+	}
+
+	public Set<Match> getMatches()
+	{
+		return matches;
+	}
+
+	public void setMatches(Set<Match> matches)
+	{
+		this.matches = matches;
 	}
 
 	@Override

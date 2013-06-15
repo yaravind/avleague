@@ -12,6 +12,8 @@
 <title>AVL Leagues</title>
 </head>
 <body>
+	<a href="/avl">Home</a>
+	<br />
 	<c:choose>
 		<c:when test="${not empty leagues}">
 			<table border="1">

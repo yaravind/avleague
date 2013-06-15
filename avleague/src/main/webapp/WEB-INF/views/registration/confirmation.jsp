@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-	pageEncoding="ISO-8859-1"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="s"%>
 <%@ taglib prefix="f" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
@@ -13,43 +12,42 @@
 </head>
 <body>
 
-<h1>${newTeamName}</h1>
+	<h1>${newTeamName}</h1>
 
-<ul>
-	<c:forEach items="${playingEight}" var="p">
-		<li>
-			<c:choose>
-				<c:when test="${p.captain}">
-					<strong>${p.name} (Captain)</strong>
-				</c:when>
-				<c:otherwise>
+	<form action="end" method="POST">
+		<ul>
+			<c:forEach items="${playerList}" var="p">
+				<input type="hidden" name="playerIds" value="${p.nodeId }" />
+				<li><c:choose>
+						<c:when test="${p.captain}">
+							<strong>${p.name} (Captain)</strong>
+						</c:when>
+						<c:otherwise>
 					${p.name}
 				</c:otherwise>
-			</c:choose>
-		</li>
-	</c:forEach>					
-</ul>
-<p>Found similar players. May be he/she already played in one of our earlier leagues. Please confirm the correct player.</p>	
-<form action="end" method="POST">	
-	<ul>
-		<c:forEach var="entry" items="${matchedPlayers}">
-			<li>
-				<input type="checkbox" name="players" value="${playerView.playerId}" />${entry.key}
-				<ul>
-					<c:forEach var="matchedPlayer" items="${entry.value}">
-				 		<li><input type="checkbox" name="players" value="${matchedPlayer.nodeId}" /> ${matchedPlayer.name}. Played with 
-				 			<c:forEach var="playedRelation" items="${matchedPlayer.playedWith}">
-				 				<em>${playedRelation.team.name}</em> during <em><fmt:formatDate type="date" value="${playedRelation.during}" /></em>.
-				 			</c:forEach>
-				 		</li>
-					</c:forEach>
-				</ul>
-			</li>
-		</c:forEach>		
-	</ul>
+					</c:choose></li>
+			</c:forEach>
+		</ul>
+		<c:if test="${not empty matchedPlayers}">
+			<p>Found similar players. May be he/she already played in one of our earlier leagues. Please confirm the correct player.</p>
+		</c:if>
 
-<input type="submit" value="Submit">
-</form>
+		<ul>
+			<c:forEach var="entry" items="${matchedPlayers}">
+				<li><input type="checkbox" name="players" value="${playerView.playerId}" />${entry.key}
+					<ul>
+						<c:forEach var="matchedPlayer" items="${entry.value}">
+							<li><input type="checkbox" name="playerIds" value="${matchedPlayer.nodeId}" /> ${matchedPlayer.name}. Played with <c:forEach
+									var="playedRelation" items="${matchedPlayer.playedWith}">
+									<em>${playedRelation.team.name}</em> during <em><fmt:formatDate type="date" value="${playedRelation.during}" /></em>.
+				 			</c:forEach></li>
+						</c:forEach>
+					</ul></li>
+			</c:forEach>
+		</ul>
+
+		<input type="submit" value="Submit">
+	</form>
 
 </body>
 </html>
