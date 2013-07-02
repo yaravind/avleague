@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
@@ -45,6 +46,8 @@ public class Player
 	// (indexType = IndexType.FULLTEXT, indexName = "playerName")
 	private String lastName;
 
+    //TODO: Temporarily ignoring since Jackson cannot serialize this to JSON
+    @JsonIgnore
 	@Fetch
 	@RelatedToVia
 	Set<PlayedWith> playedWith = new HashSet<PlayedWith>();
@@ -63,11 +66,6 @@ public class Player
 			return o1.getName().compareToIgnoreCase(o2.getName());
 		}
 	};
-
-	public Boolean getCaptain()
-	{
-		return captain;
-	}
 
 	private static final transient Splitter NAME_SPLITTER = Splitter.on(" ").trimResults().omitEmptyStrings();
 
