@@ -3,6 +3,7 @@ package com.aravind.avl.domain;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
+import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
 
@@ -29,8 +30,19 @@ public class Match
 	@GraphProperty
 	private String name;
 
+	@RelatedTo(type = "MVP")
+	private Player mvp;
+
+	@Indexed
+	@GraphProperty
+	private Level level;
+
+	public enum Level {
+		PLAYOFFS, QUARTER_FINALS, SEMI_FINALS, ALL_STAR
+	}
+
 	@Transient
-	private static final transient Joiner NAME_MAKER = Joiner.on("-");
+	private static final transient Joiner NAME_MAKER = Joiner.on(" ");
 
 	public Match()
 	{
@@ -42,9 +54,7 @@ public class Match
 		teamB = team2;
 		league = partOf;
 
-		// DateFormat df = new SimpleDateFormat("MMM dd, yyyy");
-
-		name = NAME_MAKER.join(teamA.getName(), "vs.", teamB.getName());
+		name = NAME_MAKER.join(teamA.getName(), "v", teamB.getName());
 	}
 
 	public Long getNodeId()
@@ -95,6 +105,33 @@ public class Match
 	public void setWinner(Team winner)
 	{
 		this.winner = winner;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Match [getNodeId()=" + getNodeId() + ", getName()=" + getName() + ", getLeague()=" + getLeague() + ", getTeamA()="
+				+ getTeamA() + ", getTeamB()=" + getTeamB() + ", getWinner()=" + getWinner() + "]";
+	}
+
+	public Level getLevel()
+	{
+		return level;
+	}
+
+	public void setLevel(Level level)
+	{
+		this.level = level;
+	}
+
+	public Player getMvp()
+	{
+		return mvp;
+	}
+
+	public void setMvp(Player mvp)
+	{
+		this.mvp = mvp;
 	}
 
 }

@@ -13,8 +13,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-@RunWith (SpringJUnit4ClassRunner.class)
-@ContextConfiguration ({ "/testContext.xml"})
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration({ "/testContext.xml" })
 @Transactional
 public class TeamRepositoryTest
 {
@@ -39,6 +39,11 @@ public class TeamRepositoryTest
 
 		t = new Team();
 		t.setName("Alpharetta One");
+
+		Pool pl = new Pool();
+		pl.setName("Pool A");
+
+		t.setPool(pl);
 	}
 
 	@Test
@@ -46,6 +51,7 @@ public class TeamRepositoryTest
 	{
 		teamRepo.save(t);
 		assertNotNull(t.getNodeId());
+		assertNotNull(t.getPool().getNodeId());
 
 		PlayedWith playedWith = p.playedWith(t, new Date(), null);
 		assertNotNull("Should return an instance of PlayedWith class", playedWith);

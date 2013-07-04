@@ -12,6 +12,9 @@
 <title>AVL Leagues</title>
 </head>
 <body>
+
+<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
+
 	<a href="/avl">Home</a>
 	<br />
 	<c:choose>
@@ -23,6 +26,9 @@
 							<p><strong>${league.name} - ${league.nodeId}</strong></p>
 							<p>
 								<em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em>
+							</p>
+							<p>
+							<a href="${cp}/leagues/${league.nodeId}/matches/new">Create matches</a>
 							</p>
 							 <c:forEach items="${league.teams}" var="team">
 								<li>

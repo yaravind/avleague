@@ -19,6 +19,9 @@
 	<logger name="org.springframework">
 		<level value="ERROR" />
 	</logger>	
+	<logger name="org.springframework.web">
+		<level value="debug" />
+	</logger>
 	
 	<logger name="org.springframework.transaction">
 		<level value="DEBUG" />

@@ -19,15 +19,19 @@ public class Team
 	private Long nodeId;
 
 	@GraphProperty
-	@Indexed (unique = true)
+	@Indexed(unique = true)
 	private String name;
 
 	@Fetch
-	@RelatedTo (type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
+	@RelatedTo(type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
 	private final Set<Player> players = new HashSet<Player>();
 
+	@RelatedTo(type = "IN_POOL")
+	private Pool pool;
+
 	public Team()
-	{}
+	{
+	}
 
 	public String getName()
 	{
@@ -100,6 +104,16 @@ public class Team
 		else if (!nodeId.equals(other.nodeId))
 			return false;
 		return true;
+	}
+
+	public Pool getPool()
+	{
+		return pool;
+	}
+
+	public void setPool(Pool pool)
+	{
+		this.pool = pool;
 	}
 
 }

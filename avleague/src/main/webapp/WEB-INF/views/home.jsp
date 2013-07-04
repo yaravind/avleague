@@ -21,6 +21,7 @@
 		<li>Administration
 			<ul>
 				<li><a href="admin/populate">Import previous leagues.</a></li>
+				<li><a href="leagues/matches/new">Add match to a league</a></li>
 			</ul>
 		</li>
 	</ul>

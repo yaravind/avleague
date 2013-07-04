@@ -12,11 +12,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
+import com.aravind.avl.domain.Match;
 import com.aravind.avl.domain.TeamRepository;
 import com.aravind.avl.service.LeagueFactory;
 import com.aravind.avl.service.LeaguePopulator;
@@ -61,6 +64,33 @@ public class LeagueController
 		// attached to the graph, the node is updated,
 		// otherwise a new node is created.
 		leagueRepo.save(newLeague);
+
+		return "redirect:list";
+	}
+
+	@RequestMapping(value = "/leagues/{leagueId}/matches/new", method = RequestMethod.GET)
+	public String newMatch(@PathVariable Long leagueId, Model model)
+	{
+		LOG.debug("Adding an empty Match binding to model");
+		Match m = new Match();
+		model.addAttribute("newMatch", m);
+		return "/leagues/matches/new";
+	}
+
+	@Transactional
+	@RequestMapping(value = "/leagues/{leagueId}/matches/new", method = RequestMethod.POST)
+	public String newMatch(@PathVariable Long leagueId, @RequestParam("teamA.nodeId") Long teamA, @RequestParam("teamB.nodeId") Long teamB)
+	{
+		LOG.debug("Creating new match for League id: {}", leagueId);
+		LOG.debug("Creating new match between Team A: {}", teamA);
+		LOG.debug("and Team B: {}", teamB);
+		// Stores the given entity in the graph, if the entity is already
+		// attached to the graph, the node is updated,
+		// otherwise a new node is created.
+		League league = leagueRepo.findOne(leagueId);
+		Match match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB));
+
+		leagueRepo.save(league);
 
 		return "redirect:list";
 	}
