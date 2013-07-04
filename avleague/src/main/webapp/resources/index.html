@@ -1,0 +1,25 @@
+<html ng-app="avl">
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.min.js" ></script>
+    <script src="/avl/resources/js/LeagueController.js"></script>
+</head>
+<body>
+<table border="1" ng-controller='LeagueController'>
+    <tr valign="top">
+    <td ng-repeat='league in leagues'>
+        <p><strong>{{league.name}} - {{league.nodeId}}</strong></p>
+        <p>
+            <em>{{league.startDate | date:'yyyy-MM-dd'}}</em> - <em>{{league.endDate | date:'yyyy-MM-dd'}}</em>
+        </p>
+            <li ng-repeat='team in league.teams'>
+                <p>{{team.name}} - {{team.nodeId}}</p>
+                <ul ng-repeat='player in team.players'>
+                      <li>{{player.name}} - {{player.nodeId}}</li>
+                </ul>
+            </li>
+    </td>
+    </tr>
+</table>
+</body>
+</html>

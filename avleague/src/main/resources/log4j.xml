@@ -17,7 +17,7 @@
 	
 	<!-- 3rdparty Loggers -->
 	<logger name="org.springframework">
-		<level value="ERROR" />
+		<level value="INFO" />
 	</logger>	
 	<logger name="org.springframework.web">
 		<level value="debug" />
@@ -36,7 +36,7 @@
 	</logger>
 
 	<logger name="org.springframework.web">
-		<level value="ERROR" />
+		<level value="DEBUG" />
 	</logger>
 
 	<!-- Root Logger -->
