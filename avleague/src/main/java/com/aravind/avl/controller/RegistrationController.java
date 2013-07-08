@@ -246,6 +246,7 @@ public class RegistrationController
 
 	private PlayedWith createPlayedWithRelation(League currentLeague, Team team, Player p)
 	{
+		LOG.debug("Creating PLAYED_WITH_TEAM relation between {} and {} for League {}", new Object[]{ team, p, currentLeague});
 		PlayedWith playedWith = template.createRelationshipBetween(p, team, PlayedWith.class, "PLAYED_WITH_TEAM", true);
 		playedWith.setDuring(currentLeague.getStartDate());
 		playedWith.setInLeague(currentLeague);
@@ -257,6 +258,7 @@ public class RegistrationController
 
 		team.addPlayer(p);
 
+		LOG.debug("Created relation: {}", playedWith);
 		return playedWith;
 	}
 

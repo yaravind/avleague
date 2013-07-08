@@ -46,8 +46,8 @@ public class Player
 	// (indexType = IndexType.FULLTEXT, indexName = "playerName")
 	private String lastName;
 
-    //TODO: Temporarily ignoring since Jackson cannot serialize this to JSON
-    @JsonIgnore
+	// TODO: Temporarily ignoring since Jackson cannot serialize this to JSON
+	@JsonIgnore
 	@Fetch
 	@RelatedToVia
 	Set<PlayedWith> playedWith = new HashSet<PlayedWith>();
@@ -154,6 +154,11 @@ public class Player
 	public Set<PlayedWith> getPlayedWith()
 	{
 		return playedWith;
+	}
+
+	public Boolean getCaptain()
+	{
+		return captain;
 	}
 
 	@Override

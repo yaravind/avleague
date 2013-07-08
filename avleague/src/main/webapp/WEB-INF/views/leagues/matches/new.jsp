@@ -12,17 +12,20 @@
 </head>
 <body>
 
-<f:form action="new" method="POST" commandName="newMatch">
-<f:label path="name">Pool </f:label>
-<f:input path="name" />
-<br/>
-<f:label path="teamA.nodeId">Team A </f:label>
-<f:input path="teamA.nodeId" />
-<br/>
-<f:label path="teamB.nodeId">Team B </f:label>
-<f:input path="teamB.nodeId" />
-<br/>
-<input type="submit" value="Create"/>
-</f:form>
+	<f:form action="new" method="POST" commandName="newMatch">
+		<f:label path="pool">Pool </f:label>
+		<f:input path="pool" />
+		<br />
+		<f:label path="teamA.nodeId">Team A </f:label>
+		<f:select path="teamA.nodeId" items="${teamsOfCurrentLeague}" />
+		<br />
+		<f:label path="teamB.nodeId">Team B </f:label>
+		<f:select path="teamB.nodeId" items="${teamsOfCurrentLeague}" />
+		<br />
+		<f:label path="level">Team B </f:label>
+		<f:select path="level" items="${levels}" />
+		<br />
+		<input type="submit" value="Create" />
+	</f:form>
 </body>
 </html>

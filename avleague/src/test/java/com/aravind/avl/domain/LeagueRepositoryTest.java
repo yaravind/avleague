@@ -21,18 +21,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.aravind.avl.domain.Match.Level;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration({ "/testContext.xml" })
+@RunWith (SpringJUnit4ClassRunner.class)
+@ContextConfiguration ({ "/testContext.xml"})
 @Transactional
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext (classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class LeagueRepositoryTest
 {
 	@Autowired
 	LeagueRepository repo;
 
 	League l;
+
 	Team teamA;
+
 	Team teamB;
+
 	Player p;
 
 	@Before
@@ -72,7 +75,7 @@ public class LeagueRepositoryTest
 		Iterable<League> all = repo.findAll();
 		Set<League> sortedLeagues = new TreeSet<League>();
 
-		for (League l1 : all)
+		for (League l1: all)
 		{
 			sortedLeagues.add(l1);
 		}
@@ -89,8 +92,10 @@ public class LeagueRepositoryTest
 		m.setLevel(Level.PLAYOFFS);
 		m.setMvp(p);
 		m.setWinner(teamA);
+		m.setPool(new Pool("A"));
 		l = repo.save(l);
 		assertNotNull(m);
+		assertNotNull(m.getPool().getNodeId());
 
 		assertNotNull("Make sure match is saved when the league is saved", m.getNodeId());
 	}

@@ -29,6 +29,8 @@
 							</p>
 							<p>
 							<a href="${cp}/leagues/${league.nodeId}/matches/new">Create matches</a>
+							<br />
+							<a href="${cp}/leagues/${league.name}/matches/">List matches</a>							
 							</p>
 							 <c:forEach items="${league.teams}" var="team">
 								<li>
