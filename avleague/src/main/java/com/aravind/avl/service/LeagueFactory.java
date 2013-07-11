@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.Player;
+import com.aravind.avl.domain.Pool;
 import com.aravind.avl.domain.Team;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashBasedTable;
@@ -35,11 +36,16 @@ public class LeagueFactory
 	public static class ImportProfile
 	{
 		public int teamNameRowNum;
+
 		public int emailColumnNum;
+
 		public int phoneColumnNum;
+
+		public int poolColumnNum;
 	}
 
 	private transient final Logger LOG = LoggerFactory.getLogger(getClass());
+
 	private static final Splitter SPLIT_ON_COMMA = Splitter.on(",").trimResults();
 
 	public League createLeague(File leagueFile, ImportProfile profile) throws CannotCreateLeagueException
@@ -91,13 +97,13 @@ public class LeagueFactory
 
 		Table<String, Integer, String> teamPerRow = Tables.transpose(leagueTable);
 
-		for (String teamName : teamPerRow.rowKeySet())
+		for (String teamName: teamPerRow.rowKeySet())
 		{
 			createTeamIfDoesntExist(league, teamName);
 
 			Map<Integer, String> rawTeam = leagueTable.column(teamName);
-			// TODO 1st column is always captain, and the last 2 columns are
-			// email and phone number respectivley
+			// TODO 1st column is always captain, and the last 2 columns but 1 (the last column indicates the Pool) are
+			// email and phone number respectively
 			addCaptainTo(league, rawTeam.get(1), rawTeam.get(profile.emailColumnNum), rawTeam.get(profile.phoneColumnNum), teamName);
 
 			// remaining columns (from 2-profile.emailColumnNum) are player
@@ -107,12 +113,14 @@ public class LeagueFactory
 				String name = rawTeam.get(i);
 				if (StringUtils.isNotBlank(name))
 				{
-					addPlayerTo(league, name, teamName);
+					String poolName = rawTeam.get(profile.poolColumnNum);
+
+					addPlayerTo(league, name, teamName, poolName);
 				}
 			}
 		}
 
-		for (Team t : league.getTeams())
+		for (Team t: league.getTeams())
 		{
 
 			LOG.debug("Team: {}. Total players: {}", t.getName(), Lists.newArrayList(t.getPlayers()).size());
@@ -124,7 +132,7 @@ public class LeagueFactory
 	{
 		boolean newTeam = true;
 
-		for (Team t : league.getTeams())
+		for (Team t: league.getTeams())
 		{
 			if (t.getName().equalsIgnoreCase(teamName))
 			{
@@ -146,12 +154,13 @@ public class LeagueFactory
 		return t;
 	}
 
-	public void addPlayerTo(League league, String fullName, String teamName)
+	public void addPlayerTo(League league, String fullName, String teamName, String poolName)
 	{
 		LOG.debug("Adding {} to team: {}", fullName, teamName);
 		Player p = new Player();
 		p.setName(fullName);
 		Team team = createTeamIfDoesntExist(league, teamName);
+		team.setPool(new Pool(poolName));
 		team.addPlayer(p);
 	}
 

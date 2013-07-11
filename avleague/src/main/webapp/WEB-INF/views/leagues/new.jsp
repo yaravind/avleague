@@ -21,6 +21,21 @@
 <f:label path="endDate">When does the league end? </f:label>
 <f:input path="endDate" />
 <br/>
+<%-- <f:label path="endDate">When does the league end? </f:label>
+<f:input path="endDate" />
+<br/>
+<f:label path="venueName">Where is the league being organized? The name of the venue or park. </f:label>
+<f:input path="venueName" />
+<br/>
+<f:label path="courtName1">Name of the court at the venue</f:label>
+<f:input path="courtName1" />
+<br/>
+<f:label path="courtName2">Name of the court at the venue</f:label>
+<f:input path="courtName2" />
+<br/>
+<f:label path="courtName3">Name of the court at the venue</f:label>
+<f:input path="courtName3" />
+<br/> --%>
 <input type="submit" value="Create"/>
 </f:form>
 </body>

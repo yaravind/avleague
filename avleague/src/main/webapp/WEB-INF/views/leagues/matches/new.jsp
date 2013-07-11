@@ -16,14 +16,17 @@
 		<f:label path="pool">Pool </f:label>
 		<f:input path="pool" />
 		<br />
+		<f:label path="level">Level</f:label>
+		<f:select path="level" items="${levels}" />
+		<br />
 		<f:label path="teamA.nodeId">Team A </f:label>
 		<f:select path="teamA.nodeId" items="${teamsOfCurrentLeague}" />
 		<br />
 		<f:label path="teamB.nodeId">Team B </f:label>
 		<f:select path="teamB.nodeId" items="${teamsOfCurrentLeague}" />
 		<br />
-		<f:label path="level">Team B </f:label>
-		<f:select path="level" items="${levels}" />
+		<f:label path="playedOnCourt">Court where this match will be played on </f:label>
+		<f:select path="playedOnCourt" items="${courts}" />
 		<br />
 		<input type="submit" value="Create" />
 	</f:form>

@@ -1,5 +1,7 @@
 package com.aravind.avl.domain;
 
+import java.util.Date;
+
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
@@ -41,6 +43,12 @@ public class Match
 	@Fetch
 	@RelatedTo (type = "PART_OF_POOL")
 	private Pool pool;
+
+	@GraphProperty (propertyType = Long.class)
+	private Date time;
+
+	@RelatedTo (type = "PLAYED_ON")
+	private Court playedOnCourt;
 
 	public enum Level
 	{
@@ -107,6 +115,16 @@ public class Match
 		return winner;
 	}
 
+	public Court getPlayedOnCourt()
+	{
+		return playedOnCourt;
+	}
+
+	public void setPlayedOn(Court playedOnCourt)
+	{
+		this.playedOnCourt = playedOnCourt;
+	}
+
 	public void setWinner(Team winner)
 	{
 		this.winner = winner;
@@ -142,11 +160,22 @@ public class Match
 		this.pool = pool;
 	}
 
+	public Date getTime()
+	{
+		return time;
+	}
+
+	public void setTime(Date time)
+	{
+		this.time = time;
+	}
+
 	@Override
 	public String toString()
 	{
-		return "Match [nodeId=" + nodeId + ", league=" + league.getName() + ", teamA=" + teamA + ", teamB=" + teamB + ", winner="
-				+ winner + ", name=" + name + ", mvp=" + mvp + ", level=" + level + ", pool=" + pool + "]";
+		return "Match [nodeId=" + nodeId + ", league=" + league + ", teamA=" + teamA + ", teamB=" + teamB + ", winner=" + winner
+				+ ", name=" + name + ", mvp=" + mvp + ", level=" + level + ", pool=" + pool + ", time=" + time + ", playedOnCourt="
+				+ playedOnCourt + "]";
 	}
 
 	@Override

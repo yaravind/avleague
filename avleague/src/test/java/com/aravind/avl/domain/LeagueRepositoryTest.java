@@ -20,6 +20,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.aravind.avl.domain.Match.Level;
+import com.google.common.collect.Iterables;
 
 @RunWith (SpringJUnit4ClassRunner.class)
 @ContextConfiguration ({ "/testContext.xml"})
@@ -30,6 +31,9 @@ public class LeagueRepositoryTest
 	@Autowired
 	LeagueRepository repo;
 
+	@Autowired
+	MatchRepository matchRepo;
+
 	League l;
 
 	Team teamA;
@@ -37,6 +41,8 @@ public class LeagueRepositoryTest
 	Team teamB;
 
 	Player p;
+
+	Venue v;
 
 	@Before
 	public void setUp() throws ParseException
@@ -63,6 +69,10 @@ public class LeagueRepositoryTest
 
 		l.addTeam(teamA);
 		l.addTeam(teamB);
+
+		v = new Venue("Ocee Park");
+		v.addCourt(new Court("High Court"));
+		l.setPlayedAt(v);
 	}
 
 	@Test
@@ -82,21 +92,24 @@ public class LeagueRepositoryTest
 	}
 
 	@Test
-	public void saveMatch()
+	public void saveMatch() throws ParseException
 	{
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM");
+		SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy kk.mm");
 
-		Match m = l.conductMatch(teamA, teamB);
+		Match m = l.conductMatch(teamA, teamB, Iterables.get(v.getCourts(), 0));
 		assertEquals("Match name maker test", teamA.getName() + " v " + teamB.getName(), m.getName());
+
+		m.setTime(df.parse("07-27-2013 13.30"));
 
 		m.setLevel(Level.PLAYOFFS);
 		m.setMvp(p);
 		m.setWinner(teamA);
 		m.setPool(new Pool("A"));
-		l = repo.save(l);
+		m = matchRepo.save(m);
+
 		assertNotNull(m);
 		assertNotNull(m.getPool().getNodeId());
-
+		assertNotNull(m.getPlayedOnCourt().getNodeId());
 		assertNotNull("Make sure match is saved when the league is saved", m.getNodeId());
 	}
 
@@ -120,6 +133,7 @@ public class LeagueRepositoryTest
 
 		League currentLeague = repo.findCurrentLeague();
 		assertNotNull(currentLeague);
-		assertEquals("Most recent league should be returned", "in year 2013", currentLeague.getName());
+		assertEquals("Most recent league should be returned. The first letter of each word in the name should also be capitalized",
+				"In Year 2013", currentLeague.getName());
 	}
 }

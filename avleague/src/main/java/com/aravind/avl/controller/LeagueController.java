@@ -1,11 +1,13 @@
 package com.aravind.avl.controller;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.aravind.avl.domain.Court;
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
 import com.aravind.avl.domain.Match;
@@ -28,6 +31,7 @@ import com.aravind.avl.domain.Pool;
 import com.aravind.avl.domain.PoolRepository;
 import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
+import com.aravind.avl.domain.Venue;
 import com.aravind.avl.service.LeagueFactory;
 import com.aravind.avl.service.LeaguePopulator;
 
@@ -66,8 +70,12 @@ public class LeagueController
 	public String list(Model model)
 	{
 		Iterable<League> all = leagueRepo.findAll();
-		model.addAttribute("leagues", IteratorUtil.asCollection(all));
-
+		Collection<League> leagues = IteratorUtil.asCollection(all);
+		model.addAttribute("leagues", leagues);
+		for (League l: leagues)
+		{
+			template.fetch(l.getPlayedAt());
+		}
 		return "/leagues/list";
 	}
 
@@ -106,6 +114,8 @@ public class LeagueController
 		}
 		model.addAttribute("levels", levels);
 
+		model.addAttribute("courts", Arrays.asList("High Court", "Low Court"));
+
 		return "/leagues/matches/new";
 	}
 
@@ -128,18 +138,25 @@ public class LeagueController
 	@Transactional
 	@RequestMapping (value = "/leagues/{leagueId}/matches/new", method = RequestMethod.POST)
 	public String newMatch(@PathVariable Long leagueId, @RequestParam ("teamA.nodeId") Long teamA,
-			@RequestParam ("teamB.nodeId") Long teamB, @RequestParam ("pool") String pool, @RequestParam ("level") String level)
+			@RequestParam ("teamB.nodeId") Long teamB, @RequestParam ("pool") String pool, @RequestParam ("level") String level,
+			@RequestParam ("playedOnCourt") String court)
 	{
 		LOG.debug("Creating new match for League id: {}", leagueId);
 		LOG.debug("Creating new match between Team A: {}", teamA);
 		LOG.debug("and Team B: {}", teamB);
 		LOG.debug("in Pool: {}", pool);
+		LOG.debug("on Court: {}", court);
 		LOG.debug("for Level : {}", Match.Level.valueOf(level));
 		// Stores the given entity in the graph, if the entity is already
 		// attached to the graph, the node is updated,
 		// otherwise a new node is created.
 		League league = leagueRepo.findOne(leagueId);
-		Match match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB));
+		LOG.debug("Before fetch {}", league.getPlayedAt());
+		template.fetch(league.getPlayedAt());
+		LOG.debug("After fetch {}", league.getPlayedAt());
+		Venue venue = league.getPlayedAt();
+
+		Match match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venue.findCourtByName(court));
 		match.setLevel(Match.Level.valueOf(level));
 
 		Pool p = poolRepo.findByName(pool);
@@ -166,6 +183,7 @@ public class LeagueController
 		profile.teamNameRowNum = 0;
 		profile.emailColumnNum = 11;
 		profile.phoneColumnNum = 12;
+		profile.poolColumnNum = 13;
 
 		Collection<League> june2012 = populator.populateDatabase(
 				"Sri Bala Bharathi 2012 June League_2012-06-16_2012-06-17.properties", profile);
@@ -176,6 +194,7 @@ public class LeagueController
 		profile.teamNameRowNum = 0;
 		profile.emailColumnNum = 9;
 		profile.phoneColumnNum = 10;
+		profile.poolColumnNum = 11;
 
 		Collection<League> september2012 = populator.populateDatabase(
 				"Sri Bala Bharathi 2012 September League_2012-09-08_2012-09-15.properties", profile);
@@ -195,5 +214,57 @@ public class LeagueController
 		model.addAttribute("leagues", leagues);
 
 		return "/leagues/list";
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/venues", method = RequestMethod.GET)
+	public String venues(@PathVariable ("leagueName") String leagueName, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Before fetch {}", l.getPlayedAt());
+		template.fetch(l.getPlayedAt());
+		LOG.debug("After fetch {}", l.getPlayedAt());
+		model.addAttribute("league", l);
+
+		return "/leagues/newVenue";
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/venues", method = RequestMethod.POST)
+	public String venues(@RequestParam ("leagueName") String leagueName, @RequestParam ("venueName") String venue,
+			@RequestParam ("courtName1") String court1, @RequestParam ("courtName2") String court2,
+			@RequestParam ("courtName3") String court3, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+
+		Venue playedAt = l.getPlayedAt();
+		if (playedAt == null)
+		{
+			LOG.debug("Adding venue {} with courts {}, {}, {}", new Object[]{ venue, court1, court2, court3});
+			playedAt = new Venue(venue);
+			if (StringUtils.isNotBlank(court1))
+			{
+				playedAt.addCourt(new Court(court1));
+			}
+			if (StringUtils.isNotBlank(court2))
+			{
+				playedAt.addCourt(new Court(court2));
+			}
+			if (StringUtils.isNotBlank(court3))
+			{
+				playedAt.addCourt(new Court(court3));
+			}
+			l.setPlayedAt(playedAt);
+			LOG.debug("Before saving venue {}", l.getPlayedAt());
+			leagueRepo.save(l);
+			LOG.debug("After saving venue {}", l.getPlayedAt());
+		}
+		else
+		{
+			LOG.warn("League already has venue added {}", l.getPlayedAt());
+			template.fetch(l.getPlayedAt());
+		}
+
+		model.addAttribute("league", l);
+
+		return "redirect:list";
 	}
 }

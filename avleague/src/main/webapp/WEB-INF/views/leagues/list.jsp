@@ -31,6 +31,16 @@
 							<a href="${cp}/leagues/${league.nodeId}/matches/new">Create matches</a>
 							<br />
 							<a href="${cp}/leagues/${league.name}/matches/">List matches</a>							
+							<br />
+							<c:out value="${league.playedAt}"/>
+							<c:choose>
+								<c:when test="${not empty league.playedAt}">
+									Played at <strong>${league.playedAt.name}</strong>
+								</c:when>
+								<c:otherwise>
+									<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
+								</c:otherwise>
+							</c:choose>
 							</p>
 							 <c:forEach items="${league.teams}" var="team">
 								<li>

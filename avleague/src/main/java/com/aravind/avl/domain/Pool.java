@@ -1,5 +1,7 @@
 package com.aravind.avl.domain;
 
+import static com.aravind.avl.domain.StringUtil.capitalizeFirstLetter;
+
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.NodeEntity;
@@ -16,9 +18,9 @@ public class Pool
 	public Pool()
 	{}
 
-	public Pool(String name)
+	public Pool(String n)
 	{
-		this.name = name;
+		this.name = capitalizeFirstLetter(n);;
 	}
 
 	public String getName()
@@ -78,5 +80,4 @@ public class Pool
 			return false;
 		return true;
 	}
-
 }

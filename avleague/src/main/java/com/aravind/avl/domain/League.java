@@ -1,6 +1,7 @@
 package com.aravind.avl.domain;
 
 import static org.neo4j.graphdb.Direction.INCOMING;
+import static org.neo4j.graphdb.Direction.OUTGOING;
 
 import java.util.Date;
 import java.util.HashSet;
@@ -19,39 +20,42 @@ public class League implements Comparable<League>
 	@GraphId
 	private Long nodeId;
 
-	@Indexed(unique = true)
+	@Indexed (unique = true)
 	@GraphProperty
 	private String name;
 
 	@Indexed
-	@GraphProperty(propertyType = Long.class)
+	@GraphProperty (propertyType = Long.class)
 	private Date startDate;
 
 	@Indexed
-	@GraphProperty(propertyType = Long.class)
+	@GraphProperty (propertyType = Long.class)
 	private Date endDate;
 
 	@Fetch
-	@RelatedTo(type = "CONTESTED_IN", direction = INCOMING)
-	private Set<Team> teams = new HashSet<Team>();
+	@RelatedTo (type = "CONTESTED_IN", direction = INCOMING)
+	private final Set<Team> teams = new HashSet<Team>();
 
-	@RelatedTo(type = "PART_OF_LEAGUE", direction = INCOMING)
+	@RelatedTo (type = "PART_OF_LEAGUE", direction = INCOMING)
 	private Set<Match> matches = new HashSet<Match>();
 
+	@RelatedTo (type = "PLAYED_AT", direction = OUTGOING)
+	private Venue playedAt;
+
 	public League()
-	{
-	}
+	{}
 
 	public League(String leagueName, Date leagueStartDate, Date leagueEndDate)
 	{
-		name = leagueName;
+		name = StringUtil.capitalizeFirstLetter(leagueName);
 		startDate = leagueStartDate;
 		endDate = leagueEndDate;
 	}
 
-	public Match conductMatch(Team teamA, Team teamB)
+	public Match conductMatch(Team teamA, Team teamB, Court court)
 	{
 		Match m = new Match(teamA, teamB, this);
+		m.setPlayedOn(court);
 		matches.add(m);
 		return m;
 	}
@@ -88,7 +92,7 @@ public class League implements Comparable<League>
 
 	public void setName(String name)
 	{
-		this.name = name;
+		this.name = StringUtil.capitalizeFirstLetter(name);
 	}
 
 	public void setStartDate(Date startDate)
@@ -167,4 +171,15 @@ public class League implements Comparable<League>
 	{
 		return this.getStartDate().compareTo(other.getStartDate());
 	}
+
+	public void setPlayedAt(Venue v)
+	{
+		playedAt = v;
+	}
+
+	public Venue getPlayedAt()
+	{
+		return playedAt;
+	}
+
 }
