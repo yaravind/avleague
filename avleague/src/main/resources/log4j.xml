@@ -17,10 +17,10 @@
 	
 	<!-- 3rdparty Loggers -->
 	<logger name="org.springframework">
-		<level value="INFO" />
+		<level value="ERROR" />
 	</logger>	
 	<logger name="org.springframework.web">
-		<level value="debug" />
+		<level value="ERROR" />
 	</logger>
 	
 	<logger name="org.springframework.transaction">
@@ -32,10 +32,6 @@
 	</logger>
 	
 	<logger name="org.springframework.data">
-		<level value="DEBUG" />
-	</logger>
-
-	<logger name="org.springframework.web">
 		<level value="DEBUG" />
 	</logger>
 

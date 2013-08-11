@@ -1,11 +1,11 @@
 package com.aravind.avl.controller;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.neo4j.helpers.collection.IteratorUtil;
@@ -32,12 +32,14 @@ import com.aravind.avl.domain.PoolRepository;
 import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 import com.aravind.avl.domain.Venue;
+import com.aravind.avl.domain.VenueRepository;
 import com.aravind.avl.service.LeagueFactory;
 import com.aravind.avl.service.LeaguePopulator;
 
 @Controller
 public class LeagueController
 {
+
 	private transient final Logger LOG = LoggerFactory.getLogger(getClass());
 
 	@Autowired
@@ -54,6 +56,9 @@ public class LeagueController
 
 	@Autowired
 	private MatchRepository matchRepo;
+
+	@Autowired
+	private VenueRepository venueRepo;
 
 	@Autowired
 	private Neo4jTemplate template;
@@ -100,7 +105,11 @@ public class LeagueController
 		model.addAttribute("newMatch", m);
 
 		Map<Long, String> teams = new LinkedHashMap<Long, String>();
+
 		League currentLeague = leagueRepo.findCurrentLeague();
+		template.fetch(currentLeague.getPlayedAt());
+		LOG.debug("Venues {}", currentLeague.getPlayedAt());
+
 		for (Team t: currentLeague.getTeams())
 		{
 			teams.put(t.getNodeId(), t.getName());
@@ -114,8 +123,18 @@ public class LeagueController
 		}
 		model.addAttribute("levels", levels);
 
-		model.addAttribute("courts", Arrays.asList("High Court", "Low Court"));
+		List<String> courts = new ArrayList<String>();
+		for (Venue v: currentLeague.getPlayedAt())
+		{
+			for (Court c: v.getCourts())
+			{
+				String label = v.getName() + " - " + c.getName();
+				courts.add(label);
+				LOG.debug("Adding court {}", label);
+			}
+		}
 
+		model.addAttribute("courts", courts);
 		return "/leagues/matches/new";
 	}
 
@@ -139,13 +158,13 @@ public class LeagueController
 	@RequestMapping (value = "/leagues/{leagueId}/matches/new", method = RequestMethod.POST)
 	public String newMatch(@PathVariable Long leagueId, @RequestParam ("teamA.nodeId") Long teamA,
 			@RequestParam ("teamB.nodeId") Long teamB, @RequestParam ("pool") String pool, @RequestParam ("level") String level,
-			@RequestParam ("playedOnCourt") String court)
+			@RequestParam ("playedOnCourt") String venueAndCourt)
 	{
 		LOG.debug("Creating new match for League id: {}", leagueId);
 		LOG.debug("Creating new match between Team A: {}", teamA);
 		LOG.debug("and Team B: {}", teamB);
 		LOG.debug("in Pool: {}", pool);
-		LOG.debug("on Court: {}", court);
+		LOG.debug("on Court: {}", venueAndCourt);
 		LOG.debug("for Level : {}", Match.Level.valueOf(level));
 		// Stores the given entity in the graph, if the entity is already
 		// attached to the graph, the node is updated,
@@ -154,10 +173,22 @@ public class LeagueController
 		LOG.debug("Before fetch {}", league.getPlayedAt());
 		template.fetch(league.getPlayedAt());
 		LOG.debug("After fetch {}", league.getPlayedAt());
-		Venue venue = league.getPlayedAt();
+		Set<Venue> venue = league.getPlayedAt();
+		String venueName = venueAndCourt.split(" - ")[0];
+		String courtName = venueAndCourt.split(" - ")[1];
 
-		Match match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venue.findCourtByName(court));
-		match.setLevel(Match.Level.valueOf(level));
+		Venue venueByName = league.findVenueByName(venueName);
+		Match match = null;
+		if (venueByName == null)
+		{
+			LOG.error("Couldn't fine venue with name {}", venueName);
+			return "redirect:list";
+		}
+		else
+		{
+			match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venueByName.findCourtByName(courtName));
+			match.setLevel(Match.Level.valueOf(level));
+		}
 
 		Pool p = poolRepo.findByName(pool);
 		if (p == null)
@@ -228,43 +259,67 @@ public class LeagueController
 		return "/leagues/newVenue";
 	}
 
+	@Transactional
 	@RequestMapping (value = "/leagues/{leagueName}/venues", method = RequestMethod.POST)
 	public String venues(@RequestParam ("leagueName") String leagueName, @RequestParam ("venueName") String venue,
 			@RequestParam ("courtName1") String court1, @RequestParam ("courtName2") String court2,
 			@RequestParam ("courtName3") String court3, Model model)
 	{
 		League l = leagueRepo.findByName(leagueName);
+		template.fetch(l.getPlayedAt());
+		Venue matchedVenue = null;
 
-		Venue playedAt = l.getPlayedAt();
-		if (playedAt == null)
+		// check if this is an existing venue
+		Iterable<Venue> all = venueRepo.findAll();
+		if (all.iterator().hasNext())
 		{
-			LOG.debug("Adding venue {} with courts {}, {}, {}", new Object[]{ venue, court1, court2, court3});
-			playedAt = new Venue(venue);
-			if (StringUtils.isNotBlank(court1))
+			Collection<Venue> venues = IteratorUtil.asCollection(all);
+			LOG.debug("Venue exisits with the given name {}", all);
+
+			for (Venue v: venues)
 			{
-				playedAt.addCourt(new Court(court1));
+				if (v.getName().equalsIgnoreCase(venue))
+				{
+					matchedVenue = v;
+					LOG.debug("Found matching venue {}", v);
+				}
 			}
-			if (StringUtils.isNotBlank(court2))
-			{
-				playedAt.addCourt(new Court(court2));
-			}
-			if (StringUtils.isNotBlank(court3))
-			{
-				playedAt.addCourt(new Court(court3));
-			}
-			l.setPlayedAt(playedAt);
-			LOG.debug("Before saving venue {}", l.getPlayedAt());
-			leagueRepo.save(l);
-			LOG.debug("After saving venue {}", l.getPlayedAt());
+		}
+
+		if (matchedVenue != null)
+		{
+			l.addVenue(matchedVenue);
 		}
 		else
 		{
-			LOG.warn("League already has venue added {}", l.getPlayedAt());
-			template.fetch(l.getPlayedAt());
+			l.addVenue(buildVenue(venue, court1, court2, court3));
 		}
 
+		LOG.debug("Before linking the venue {}", l.getPlayedAt());
+		leagueRepo.save(l);
+		LOG.debug("After linking the venue {}", l.getPlayedAt());
+
+		template.fetch(l.getPlayedAt());
 		model.addAttribute("league", l);
 
 		return "redirect:list";
+	}
+
+	private Venue buildVenue(String venue, String court1, String court2, String court3)
+	{
+		Venue newVenue = new Venue(venue);
+		if (StringUtils.isNotBlank(court1))
+		{
+			newVenue.addCourt(new Court(court1));
+		}
+		if (StringUtils.isNotBlank(court2))
+		{
+			newVenue.addCourt(new Court(court2));
+		}
+		if (StringUtils.isNotBlank(court3))
+		{
+			newVenue.addCourt(new Court(court3));
+		}
+		return newVenue;
 	}
 }

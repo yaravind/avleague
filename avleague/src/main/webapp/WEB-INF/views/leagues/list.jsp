@@ -32,15 +32,15 @@
 							<br />
 							<a href="${cp}/leagues/${league.name}/matches/">List matches</a>							
 							<br />
-							<c:out value="${league.playedAt}"/>
-							<c:choose>
-								<c:when test="${not empty league.playedAt}">
-									Played at <strong>${league.playedAt.name}</strong>
-								</c:when>
-								<c:otherwise>
-									<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
-								</c:otherwise>
-							</c:choose>
+							<!-- c:out value="${league.playedAt}"/ -->
+								<c:if test="${not empty league.playedAt}">
+									<ul>
+										<c:forEach items="${league.playedAt}" var="venue">
+											<li>Played at <strong>${venue.name} - ${venue.nodeId}</strong></li>
+										</c:forEach>
+									</ul>
+								</c:if>
+								<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
 							</p>
 							 <c:forEach items="${league.teams}" var="team">
 								<li>

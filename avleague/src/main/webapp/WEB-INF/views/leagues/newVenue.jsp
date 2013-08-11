@@ -11,6 +11,16 @@
 <title>Venue of the legaue.</title>
 </head>
 <body>
+	<p>
+		The <strong>${league.name}</strong> is being played at the below venues. Use the below form to add one more venue.
+	
+		<ul>
+			<c:forEach items="${league.playedAt}" var="venue">
+				<li>${venue.name }</li>
+			</c:forEach>
+		</ul>
+	</p>
+	
 	<form action="/avl/leagues/${league.name}/venues" method="post">
 		<input type="hidden" name="leagueName" value="${league.name}" />
 
