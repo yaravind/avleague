@@ -18,28 +18,34 @@
 	<br />
 	<h3>Matches for League ${league.name}</h3>
 
-	<c:choose>
-		<c:when test="${not empty league.matches}">
-			<table border="1">
-				<c:forEach items="${league.matches}" var="match">
-					<tr valign="top">
-						<td>
-							<p>
-								<strong><a href="${cp}/leagues/${league.name}/matches/${match.name}">${match.name} - ${match.nodeId}</a></strong>
-							</p>
-							<p>
-								${match.level}
-								<%-- <em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em> --%>
-							</p>
-							<p>${match.pool.name}</p>
-						</td>
-					</tr>
-				</c:forEach>
-			</table>
-		</c:when>
-		<c:otherwise>
-			<h2>No matches found.</h2>
-		</c:otherwise>
-	</c:choose>
+<c:forEach items="${levels}" var="level">
+	<h2>${level.name }</h2>
+		<c:choose>
+			<c:when test="${not empty level.fixtures}">
+				<table border="1">
+					<c:forEach items="${level.fixtures}" var="match">
+						<tr valign="top">
+							<td>
+								<p>
+									<strong><a href="${cp}/leagues/${league.name}/matches/${match.name}">${match.name} - ${match.nodeId}</a></strong>
+								</p>
+								<p>
+									Time: <fmt:formatDate type="time" value="${match.time}" />
+									<%-- 
+									${match.level}
+									<em></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em> --%>
+								</p>
+								<p>Pool: ${match.pool.name}</p>
+								<p>Court: ${match.playedOnCourt.name}</p>
+							</td>
+						</tr>
+					</c:forEach>
+				</table>
+			</c:when>
+			<c:otherwise>
+				<p>No matches found.</p>
+			</c:otherwise>
+		</c:choose>
+	</c:forEach>
 </body>
 </html>

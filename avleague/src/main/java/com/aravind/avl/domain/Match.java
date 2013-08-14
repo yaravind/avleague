@@ -6,7 +6,6 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
-import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
 
@@ -18,12 +17,11 @@ public class Match
 	@GraphId
 	private Long nodeId;
 
-	@RelatedTo (type = "PART_OF_LEAGUE")
-	private League league;
-
+	@Fetch
 	@RelatedTo (type = "TEAM_A")
 	private Team teamA;
 
+	@Fetch
 	@RelatedTo (type = "TEAM_B")
 	private Team teamB;
 
@@ -36,10 +34,6 @@ public class Match
 	@RelatedTo (type = "MVP")
 	private Player mvp;
 
-	@Indexed
-	@GraphProperty
-	private Level level;
-
 	@Fetch
 	@RelatedTo (type = "PART_OF_POOL")
 	private Pool pool;
@@ -47,13 +41,9 @@ public class Match
 	@GraphProperty (propertyType = Long.class)
 	private Date time;
 
+	@Fetch
 	@RelatedTo (type = "PLAYED_ON")
 	private Court playedOnCourt;
-
-	public enum Level
-	{
-		PLAYOFFS, QUARTER_FINALS, SEMI_FINALS, ALL_STAR
-	}
 
 	@Transient
 	private static final transient Joiner NAME_MAKER = Joiner.on(" ");
@@ -61,11 +51,10 @@ public class Match
 	public Match()
 	{}
 
-	public Match(Team team1, Team team2, League partOf)
+	public Match(Team team1, Team team2)
 	{
 		teamA = team1;
 		teamB = team2;
-		league = partOf;
 
 		name = NAME_MAKER.join(teamA.getName(), "v", teamB.getName());
 	}
@@ -78,16 +67,6 @@ public class Match
 	public String getName()
 	{
 		return name;
-	}
-
-	public League getLeague()
-	{
-		return league;
-	}
-
-	public void setLeague(League league)
-	{
-		this.league = league;
 	}
 
 	public Team getTeamA()
@@ -130,16 +109,6 @@ public class Match
 		this.winner = winner;
 	}
 
-	public Level getLevel()
-	{
-		return level;
-	}
-
-	public void setLevel(Level level)
-	{
-		this.level = level;
-	}
-
 	public Player getMvp()
 	{
 		return mvp;
@@ -171,22 +140,14 @@ public class Match
 	}
 
 	@Override
-	public String toString()
-	{
-		return "Match [nodeId=" + nodeId + ", league=" + league + ", teamA=" + teamA + ", teamB=" + teamB + ", winner=" + winner
-				+ ", name=" + name + ", mvp=" + mvp + ", level=" + level + ", pool=" + pool + ", time=" + time + ", playedOnCourt="
-				+ playedOnCourt + "]";
-	}
-
-	@Override
 	public int hashCode()
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((league == null) ? 0 : league.hashCode());
-		result = prime * result + ((level == null) ? 0 : level.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((nodeId == null) ? 0 : nodeId.hashCode());
+		result = prime * result + ((pool == null) ? 0 : pool.hashCode());
+		result = prime * result + ((time == null) ? 0 : time.hashCode());
 		return result;
 	}
 
@@ -194,36 +155,69 @@ public class Match
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		Match other = (Match) obj;
-		if (league == null)
 		{
-			if (other.league != null)
-				return false;
+			return true;
 		}
-		else if (!league.equals(other.league))
+		if (obj == null)
+		{
 			return false;
-		if (level != other.level)
+		}
+		if (getClass() != obj.getClass())
+		{
 			return false;
+		}
+		Match other = (Match) obj;
 		if (name == null)
 		{
 			if (other.name != null)
+			{
 				return false;
+			}
 		}
 		else if (!name.equals(other.name))
+		{
 			return false;
+		}
 		if (nodeId == null)
 		{
 			if (other.nodeId != null)
+			{
 				return false;
+			}
 		}
 		else if (!nodeId.equals(other.nodeId))
+		{
 			return false;
+		}
+		if (pool == null)
+		{
+			if (other.pool != null)
+			{
+				return false;
+			}
+		}
+		else if (!pool.equals(other.pool))
+		{
+			return false;
+		}
+		if (time == null)
+		{
+			if (other.time != null)
+			{
+				return false;
+			}
+		}
+		else if (!time.equals(other.time))
+		{
+			return false;
+		}
 		return true;
 	}
 
+	@Override
+	public String toString()
+	{
+		return "Match [nodeId=" + nodeId + ", teamA=" + teamA + ", teamB=" + teamB + ", winner=" + winner + ", name=" + name
+				+ ", mvp=" + mvp + ", pool=" + pool + ", time=" + time + ", playedOnCourt=" + playedOnCourt + "]";
+	}
 }

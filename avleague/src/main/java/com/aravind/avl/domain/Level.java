@@ -9,57 +9,41 @@ import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
 
+import static org.neo4j.graphdb.Direction.OUTGOING;
+
 @NodeEntity
-public class Venue
+public class Level
 {
 	@GraphId
 	private Long nodeId;
 
+	/**
+	 * Playoffs, Round 2, Semifinal, Quarterfinal, Finals, All Star
+	 */
 	@GraphProperty
 	private String name;
 
-	@Fetch
-	@RelatedTo (type = "COURT")
-	private Set<Court> courts = new HashSet<Court>();
+	@RelatedTo (type = "FIXTURE", direction = OUTGOING)
+	private Set<Match> fixtures = new HashSet<Match>();
 
-	public Venue()
+	@Fetch
+	@RelatedTo (type = "NEXT", direction = OUTGOING)
+	private Level nextLevel;
+
+	public Level()
 	{}
 
-	public Venue(String n)
+	public Level(String n)
 	{
-		this.name = StringUtil.capitalizeFirstLetter(n);
+		name = StringUtil.capitalizeFirstLetter(n);
 	}
 
-	public Court findCourtByName(String name)
+	public Match conductMatch(Team teamA, Team teamB, Court court)
 	{
-		for (Court c: courts)
-		{
-			if (c.getName().equalsIgnoreCase(name))
-			{
-				return c;
-			}
-		}
-		return null;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
-
-	public void setName(String name)
-	{
-		this.name = StringUtil.capitalizeFirstLetter(name);
-	}
-
-	public Set<Court> getCourts()
-	{
-		return courts;
-	}
-
-	public void setCourts(Set<Court> courts)
-	{
-		this.courts = courts;
+		Match m = new Match(teamA, teamB);
+		m.setPlayedOn(court);
+		fixtures.add(m);
+		return m;
 	}
 
 	public Long getNodeId()
@@ -67,10 +51,39 @@ public class Venue
 		return nodeId;
 	}
 
-	@Override
-	public String toString()
+	public Set<Match> getFixtures()
 	{
-		return "Venue [nodeId=" + nodeId + ", name=" + name + ", courts=" + courts + "]";
+		return fixtures;
+	}
+
+	public void setFixtures(Set<Match> fixtures)
+	{
+		this.fixtures = fixtures;
+	}
+
+	public void setNodeId(Long nodeId)
+	{
+		this.nodeId = nodeId;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public void setName(String n)
+	{
+		this.name = StringUtil.capitalizeFirstLetter(n);
+	}
+
+	public Level getNextLevel()
+	{
+		return nextLevel;
+	}
+
+	public void setNextLevel(Level nl)
+	{
+		this.nextLevel = nl;
 	}
 
 	@Override
@@ -98,7 +111,7 @@ public class Venue
 		{
 			return false;
 		}
-		Venue other = (Venue) obj;
+		Level other = (Level) obj;
 		if (name == null)
 		{
 			if (other.name != null)
@@ -124,8 +137,9 @@ public class Venue
 		return true;
 	}
 
-	public void addCourt(Court court)
+	@Override
+	public String toString()
 	{
-		courts.add(court);
+		return "Level [nodeId=" + nodeId + ", name=" + name + ", nextLevel=" + nextLevel + "]";
 	}
 }

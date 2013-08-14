@@ -11,13 +11,19 @@
 <title>Matches</title>
 </head>
 <body>
-
+<%
+out.println(request.getAttribute("levels"));
+%>
 	<f:form action="new" method="POST" commandName="newMatch">
 		<f:label path="pool">Pool </f:label>
 		<f:input path="pool" />
 		<br />
-		<f:label path="level">Level</f:label>
-		<f:select path="level" items="${levels}" />
+		<label for="level">Level (If you doesn't see the Level, go back to the League and add the new Level)</label>
+		<select name="level">
+			<c:forEach items="${levels}" var="entry">
+				<option value="${entry.value}">${entry.value}</option>
+			</c:forEach>
+		</select>
 		<br />
 		<f:label path="teamA.nodeId">Team A </f:label>
 		<f:select path="teamA.nodeId" items="${teamsOfCurrentLeague}" />
@@ -27,6 +33,11 @@
 		<br />
 		<f:label path="playedOnCourt">Court where this match will be played on </f:label>
 		<f:select path="playedOnCourt" items="${courts}" />
+		
+		<br />
+		<f:label path="time">Date and time for the match (MM-dd-yyyy HH:mm) HH = 0-23 </f:label>
+		<f:input path="time" />
+		
 		<br />
 		<input type="submit" value="Create" />
 	</f:form>

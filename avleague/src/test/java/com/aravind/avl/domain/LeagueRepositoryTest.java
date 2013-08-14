@@ -1,8 +1,5 @@
 package com.aravind.avl.domain;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,14 +11,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.aravind.avl.domain.Match.Level;
 import com.google.common.collect.Iterables;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith (SpringJUnit4ClassRunner.class)
 @ContextConfiguration ({ "/testContext.xml"})
@@ -29,114 +29,140 @@ import com.google.common.collect.Iterables;
 @DirtiesContext (classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class LeagueRepositoryTest
 {
-    @Autowired
-    LeagueRepository repo;
+	@Autowired
+	LeagueRepository repo;
 
-    @Autowired
-    MatchRepository matchRepo;
+	@Autowired
+	MatchRepository matchRepo;
 
-    League l;
+	@Autowired
+	Neo4jTemplate template;
 
-    Team teamA;
+	League l;
 
-    Team teamB;
+	Team teamA;
 
-    Player p;
+	Team teamB;
 
-    Venue v;
+	Player p;
 
-    @Before
-    public void setUp() throws ParseException
-    {
-	SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+	Venue v;
 
-	l = new League();
-	Date startDate = df.parse("01/03/2013");
-	l.setStartDate(startDate);
-	l.setEndDate(startDate);
-	l.setName("name");
+	Level level;
 
-	teamA = new Team();
-	teamA.setName("Team A");
-
-	p = new Player();
-	p.setName("Aravind Yarram");
-
-	teamA.addPlayer(p);
-	p.playedWith(teamA, l.getStartDate(), l);
-
-	teamB = new Team();
-	teamB.setName("Team B");
-
-	l.addTeam(teamA);
-	l.addTeam(teamB);
-
-	v = new Venue("Ocee Park");
-	v.addCourt(new Court("High Court"));
-	Set<Venue> venues=new HashSet<Venue>();
-	venues.add(v);
-	l.setPlayedAt(venues);
-    }
-
-    @Test
-    public void saveLeague() throws ParseException
-    {
-	l = repo.save(l);
-	assertNotNull(l);
-	assertNotNull(l.getNodeId());
-
-	Iterable<League> all = repo.findAll();
-	Set<League> sortedLeagues = new TreeSet<League>();
-
-	for (League l1: all)
+	@Before
+	public void setUp() throws ParseException
 	{
-	    sortedLeagues.add(l1);
+		SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+
+		l = new League();
+		Date startDate = df.parse("01/03/2013");
+		l.setStartDate(startDate);
+		l.setEndDate(startDate);
+		l.setName("name");
+
+		teamA = new Team();
+		teamA.setName("Team A");
+
+		p = new Player();
+		p.setName("Aravind Yarram");
+
+		teamA.addPlayer(p);
+		p.playedWith(teamA, l.getStartDate(), l);
+
+		teamB = new Team();
+		teamB.setName("Team B");
+
+		l.addTeam(teamA);
+		l.addTeam(teamB);
+
+		level = new Level("Playoffs");
+		l.setLevel(level);
+
+		Level qf = new Level("Quarterfinal");
+		level.setNextLevel(qf);
+
+		Level sf = new Level("Semifinal");
+		qf.setNextLevel(sf);
+
+		v = new Venue("Ocee Park");
+		v.addCourt(new Court("High Court"));
+		Set<Venue> venues = new HashSet<Venue>();
+		venues.add(v);
+		l.setPlayedAt(venues);
 	}
-    }
 
-    @Test
-    public void saveMatch() throws ParseException
-    {
-	SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy kk.mm");
+	@Test
+	public void saveLeague() throws ParseException
+	{
+		l = repo.save(l);
+		assertNotNull(l);
+		assertNotNull(l.getNodeId());
 
-	Match m = l.conductMatch(teamA, teamB, Iterables.get(v.getCourts(), 0));
-	assertEquals("Match name maker test", teamA.getName() + " v " + teamB.getName(), m.getName());
+		Iterable<League> all = repo.findAll();
+		Set<League> sortedLeagues = new TreeSet<League>();
 
-	m.setTime(df.parse("07-27-2013 13.30"));
+		for (League l1: all)
+		{
+			sortedLeagues.add(l1);
+		}
+	}
 
-	m.setLevel(Level.PLAYOFFS);
-	m.setMvp(p);
-	m.setWinner(teamA);
-	m.setPool(new Pool("A"));
-	m = matchRepo.save(m);
+	@Test
+	public void saveMatch() throws ParseException
+	{
+		SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy kk.mm");
+		repo.save(l);
 
-	assertNotNull(m);
-	assertNotNull(m.getPool().getNodeId());
-	assertNotNull(m.getPlayedOnCourt().getNodeId());
-	assertNotNull("Make sure match is saved when the league is saved", m.getNodeId());
-    }
+		Match m = l.conductMatch(teamA, teamB, Iterables.get(v.getCourts(), 0), level);
+		assertEquals("Match name maker test", teamA.getName() + " v " + teamB.getName(), m.getName());
 
-    @Test
-    public void findCurrentLeague() throws ParseException
-    {
-	SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+		m.setTime(df.parse("07-27-2013 13.30"));
+		m.setMvp(p);
+		m.setWinner(teamA);
+		m.setPool(new Pool("A"));
+		m = matchRepo.save(m);
 
-	League l1 = new League();
-	l1.setStartDate(df.parse("01/03/2013"));
-	l1.setEndDate(new Date());
-	l1.setName("in year 2013");
+		assertNotNull(m);
+		assertNotNull(m.getPool().getNodeId());
+		assertNotNull(m.getPlayedOnCourt().getNodeId());
+		assertNotNull("Make sure match is saved when the league is saved", m.getNodeId());
+	}
 
-	League l2 = new League();
-	l2.setStartDate(df.parse("01/03/2001"));
-	l2.setEndDate(df.parse("01/10/2001"));
-	l2.setName("in year 2001");
+	@Test
+	public void findCurrentLeague() throws ParseException
+	{
+		SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
 
-	repo.save(l1);
-	repo.save(l2);
+		League l1 = new League();
+		l1.setStartDate(df.parse("01/03/2013"));
+		l1.setEndDate(new Date());
+		l1.setName("in year 2013");
 
-	League currentLeague = repo.findCurrentLeague();
-	assertNotNull(currentLeague);
-	assertEquals("Most recent league should be returned. The first letter of each word in the name should also be capitalized",
-		"In Year 2013", currentLeague.getName());
-    }
+		League l2 = new League();
+		l2.setStartDate(df.parse("01/03/2001"));
+		l2.setEndDate(df.parse("01/10/2001"));
+		l2.setName("in year 2001");
+
+		repo.save(l1);
+		repo.save(l2);
+
+		League currentLeague = repo.findCurrentLeague();
+		assertNotNull(currentLeague);
+		assertEquals("Most recent league should be returned. The first letter of each word in the name should also be capitalized",
+				"In Year 2013", currentLeague.getName());
+	}
+
+	@Test
+	public void testLevels()
+	{
+		repo.save(l);
+		assertNotNull(l.getLevel().getNodeId());
+
+		Iterable<Level> levels = repo.findAllLevels(l.getNodeId());
+		assertNotNull(levels);
+		assertEquals("Order is important", "Playoffs", Iterables.get(levels, 0).getName());
+		assertEquals("Order is important", "Quarterfinal", Iterables.get(levels, 1).getName());
+		assertEquals("Order is important", "Semifinal", Iterables.get(levels, 2).getName());
+	}
 }

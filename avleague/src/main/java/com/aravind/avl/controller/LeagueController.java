@@ -1,13 +1,14 @@
 package com.aravind.avl.controller;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.aravind.avl.domain.Court;
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
+import com.aravind.avl.domain.Level;
+import com.aravind.avl.domain.LevelRepository;
 import com.aravind.avl.domain.Match;
 import com.aravind.avl.domain.MatchRepository;
 import com.aravind.avl.domain.Pool;
@@ -35,6 +38,8 @@ import com.aravind.avl.domain.Venue;
 import com.aravind.avl.domain.VenueRepository;
 import com.aravind.avl.service.LeagueFactory;
 import com.aravind.avl.service.LeaguePopulator;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
 @Controller
 public class LeagueController
@@ -61,6 +66,9 @@ public class LeagueController
 	private VenueRepository venueRepo;
 
 	@Autowired
+	private LevelRepository levelRepo;
+
+	@Autowired
 	private Neo4jTemplate template;
 
 	@RequestMapping (value = "/leagues/new", method = RequestMethod.GET)
@@ -77,10 +85,14 @@ public class LeagueController
 		Iterable<League> all = leagueRepo.findAll();
 		Collection<League> leagues = IteratorUtil.asCollection(all);
 		model.addAttribute("leagues", leagues);
+
+		Map<Long, Iterable<Level>> levelsByLeague = Maps.newHashMap();
 		for (League l: leagues)
 		{
 			template.fetch(l.getPlayedAt());
+			levelsByLeague.put(l.getNodeId(), leagueRepo.findAllLevels(l.getNodeId()));
 		}
+		model.addAttribute("levelsByLeague", levelsByLeague);
 		return "/leagues/list";
 	}
 
@@ -106,25 +118,25 @@ public class LeagueController
 
 		Map<Long, String> teams = new LinkedHashMap<Long, String>();
 
-		League currentLeague = leagueRepo.findCurrentLeague();
-		template.fetch(currentLeague.getPlayedAt());
-		LOG.debug("Venues {}", currentLeague.getPlayedAt());
+		League league = leagueRepo.findOne(leagueId);
+		template.fetch(league.getPlayedAt());
+		LOG.debug("Venues {}", league.getPlayedAt());
 
-		for (Team t: currentLeague.getTeams())
+		for (Team t: league.getTeams())
 		{
 			teams.put(t.getNodeId(), t.getName());
 		}
 		model.addAttribute("teamsOfCurrentLeague", teams);
 
 		Map<String, String> levels = new LinkedHashMap<String, String>();
-		for (Match.Level l: Match.Level.values())
+		for (Level l: leagueRepo.findAllLevels(league.getNodeId()))
 		{
-			levels.put(l.name(), l.toString());
+			levels.put(l.getName(), l.getName());
 		}
 		model.addAttribute("levels", levels);
 
 		List<String> courts = new ArrayList<String>();
-		for (Venue v: currentLeague.getPlayedAt())
+		for (Venue v: league.getPlayedAt())
 		{
 			for (Court c: v.getCourts())
 			{
@@ -147,10 +159,16 @@ public class LeagueController
 		LOG.debug("Found league: {}", l);
 
 		LOG.debug("Fetching matches");
-		template.fetch(l.getMatches());
-		LOG.debug("After fetch: {}", l.getMatches());
+		Iterable<Level> levels = leagueRepo.findAllLevels(l.getNodeId());
+		for (Level level: levels)
+		{
+			template.fetch(level.getFixtures());
+
+			LOG.debug("After fetch: Level {} Matches {}", level, level.getFixtures());
+		}
 
 		model.addAttribute("league", l);
+		model.addAttribute("levels", levels);
 		return "/leagues/matches/list";
 	}
 
@@ -158,14 +176,14 @@ public class LeagueController
 	@RequestMapping (value = "/leagues/{leagueId}/matches/new", method = RequestMethod.POST)
 	public String newMatch(@PathVariable Long leagueId, @RequestParam ("teamA.nodeId") Long teamA,
 			@RequestParam ("teamB.nodeId") Long teamB, @RequestParam ("pool") String pool, @RequestParam ("level") String level,
-			@RequestParam ("playedOnCourt") String venueAndCourt)
+			@RequestParam ("playedOnCourt") String venueAndCourt, @RequestParam ("time") String time)
 	{
 		LOG.debug("Creating new match for League id: {}", leagueId);
 		LOG.debug("Creating new match between Team A: {}", teamA);
 		LOG.debug("and Team B: {}", teamB);
 		LOG.debug("in Pool: {}", pool);
 		LOG.debug("on Court: {}", venueAndCourt);
-		LOG.debug("for Level : {}", Match.Level.valueOf(level));
+		LOG.debug("for Level : {}", level);
 		// Stores the given entity in the graph, if the entity is already
 		// attached to the graph, the node is updated,
 		// otherwise a new node is created.
@@ -173,7 +191,7 @@ public class LeagueController
 		LOG.debug("Before fetch {}", league.getPlayedAt());
 		template.fetch(league.getPlayedAt());
 		LOG.debug("After fetch {}", league.getPlayedAt());
-		Set<Venue> venue = league.getPlayedAt();
+
 		String venueName = venueAndCourt.split(" - ")[0];
 		String courtName = venueAndCourt.split(" - ")[1];
 
@@ -186,8 +204,8 @@ public class LeagueController
 		}
 		else
 		{
-			match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venueByName.findCourtByName(courtName));
-			match.setLevel(Match.Level.valueOf(level));
+			match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venueByName.findCourtByName(courtName),
+					levelRepo.findByName(level));
 		}
 
 		Pool p = poolRepo.findByName(pool);
@@ -198,10 +216,19 @@ public class LeagueController
 			poolRepo.save(p);
 		}
 		match.setPool(p);
-
+		try
+		{
+			match.setTime(DateUtils.parseDate(time, new String[]{ "MM-dd-yyyy HH:mm"}));
+		}
+		catch (ParseException e)
+		{
+			LOG.error("Can't set the time of the match", e);
+		}
 		matchRepo.save(match);
 
 		LOG.debug("Saved Match {}", match);
+
+		template.fetch(match);
 
 		return "redirect:list";
 	}
@@ -302,6 +329,74 @@ public class LeagueController
 		template.fetch(l.getPlayedAt());
 		model.addAttribute("league", l);
 
+		return "redirect:list";
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/levels", method = RequestMethod.GET)
+	public String levels(@PathVariable ("leagueName") String leagueName, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		model.addAttribute("league", l);
+
+		model.addAttribute("levels", leagueRepo.findAllLevels(l.getNodeId()));
+		return "/leagues/newLevel";
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/{leagueName}/levels", method = RequestMethod.POST)
+	public String levels(@RequestParam ("leagueName") String leagueName, @RequestParam ("levelName") String levelName,
+			@RequestParam ("beforeLevel") Long beforeLevelId, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		Level matchedLevel = null;
+
+		boolean firstLevel = beforeLevelId.equals(Long.valueOf(-1));
+
+		if (firstLevel)
+		{
+			Level newLevel = new Level(levelName);
+			l.setLevel(newLevel);
+			LOG.debug("First level for this League. Before saving the Llevel {}", l.getLevel());
+			leagueRepo.save(l);
+			LOG.debug("After saving the level {}", l.getLevel());
+		}
+		else
+		{
+			Iterable<Level> levels = leagueRepo.findAllLevels(l.getNodeId());
+			if (!Iterables.isEmpty(levels))
+			{
+				LOG.debug("Levels exist for the league {}", levels);
+
+				// check if duplicate level
+				for (Level lv: levels)
+				{
+					if (lv.getName().equalsIgnoreCase(levelName))
+					{
+						matchedLevel = lv;
+						LOG.error("Level already exists. Found matching level {}", lv);
+						break;
+					}
+				}
+				if (matchedLevel == null)
+				{
+					Level prevLevel = levelRepo.findOne(beforeLevelId);
+					Level newLevel = new Level(levelName);
+					if (prevLevel == null)
+					{
+						LOG.error("{} is not first level but couldn't find the previous level (searched for id {}) to link",
+								newLevel, beforeLevelId);
+					}
+					else
+					{
+						prevLevel.setNextLevel(newLevel);
+						LOG.debug("Saving the next level for {}", prevLevel);
+						levelRepo.save(prevLevel);
+					}
+				}
+			}
+		}
+		model.addAttribute("league", l);
+		model.addAttribute("levels", leagueRepo.findAllLevels(l.getNodeId()));
 		return "redirect:list";
 	}
 

@@ -42,6 +42,17 @@
 								</c:if>
 								<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
 							</p>
+							<p>
+							<strong>Levels</strong><br />
+							<c:if test="${not empty levelsByLeague[league.nodeId]}">
+									<ul>
+										<c:forEach items="${levelsByLeague[league.nodeId]}" var="level">
+											<li><strong>${level.name} - ${level.nodeId}</strong></li>
+										</c:forEach>
+									</ul>
+								</c:if>
+								<a href="${cp}/leagues/${league.name}/levels/">Add Level</a>
+							</p>
 							 <c:forEach items="${league.teams}" var="team">
 								<li>
 									<p>${team.name} - ${team.nodeId}</p>
