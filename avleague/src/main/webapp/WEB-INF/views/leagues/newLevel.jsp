@@ -17,7 +17,7 @@
 		form to add one more level.
 
 		<ul>
-			<c:forEach items="${levels}" var="level">
+			<c:forEach items="${league.allLevels}" var="level">
 				<li>${level.name}- ${level.nodeId}</li>
 			</c:forEach>
 		</ul>
@@ -29,8 +29,8 @@
 			for="levelName">Will be played after completion of </label> <select
 			name='beforeLevel'>
 			<c:choose>
-				<c:when test="${not empty levels}">
-					<c:forEach items="${levels}" var="level">
+				<c:when test="${not empty league.allLevels}">
+					<c:forEach items="${league.allLevels}" var="level">
 						<option value="${level.nodeId}">${level.name}</option>
 					</c:forEach>
 				</c:when>

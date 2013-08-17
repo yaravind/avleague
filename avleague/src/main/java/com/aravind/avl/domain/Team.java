@@ -19,19 +19,18 @@ public class Team
 	private Long nodeId;
 
 	@GraphProperty
-	@Indexed(unique = true)
+	@Indexed (unique = true)
 	private String name;
 
 	@Fetch
-	@RelatedTo(type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
+	@RelatedTo (type = "PLAYED_WITH_TEAM", direction = Direction.INCOMING)
 	private final Set<Player> players = new HashSet<Player>();
 
-	@RelatedTo(type = "IN_POOL")
+	@RelatedTo (type = "IN_POOL")
 	private Pool pool;
 
 	public Team()
-	{
-	}
+	{}
 
 	public String getName()
 	{
@@ -83,26 +82,40 @@ public class Team
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
+		{
 			return true;
+		}
 		if (obj == null)
+		{
 			return false;
+		}
 		if (getClass() != obj.getClass())
+		{
 			return false;
+		}
 		Team other = (Team) obj;
 		if (name == null)
 		{
 			if (other.name != null)
+			{
 				return false;
+			}
 		}
 		else if (!name.equals(other.name))
+		{
 			return false;
+		}
 		if (nodeId == null)
 		{
 			if (other.nodeId != null)
+			{
 				return false;
+			}
 		}
 		else if (!nodeId.equals(other.nodeId))
+		{
 			return false;
+		}
 		return true;
 	}
 

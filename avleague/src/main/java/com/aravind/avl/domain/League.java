@@ -2,6 +2,7 @@ package com.aravind.avl.domain;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.data.neo4j.annotation.Fetch;
@@ -10,6 +11,8 @@ import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
+
+import com.google.common.collect.Lists;
 
 import static org.neo4j.graphdb.Direction.INCOMING;
 import static org.neo4j.graphdb.Direction.OUTGOING;
@@ -56,9 +59,9 @@ public class League implements Comparable<League>
 		endDate = leagueEndDate;
 	}
 
-	public Match conductMatch(Team teamA, Team teamB, Court court, Level l)
+	public Match conductMatch(Team teamA, Team teamB, Court court, Level l, Pool p)
 	{
-		Match m = l.conductMatch(teamA, teamB, court);
+		Match m = l.conductMatch(teamA, teamB, court, p);
 		matches.add(m);
 		return m;
 	}
@@ -229,5 +232,46 @@ public class League implements Comparable<League>
 	public void setLevel(Level level)
 	{
 		this.level = level;
+	}
+
+	public Level findLevelByName(String name)
+	{
+		return findLevel(level, name);
+	}
+
+	public List<Level> getAllLevels()
+	{
+		List<Level> all = Lists.newArrayList();
+		return nextLevel(all, level);
+	}
+
+	private List<Level> nextLevel(List<Level> all, Level l)
+	{
+		if (l == null)
+		{
+			return all;
+		}
+		else
+		{
+			all.add(l);
+		}
+		return nextLevel(all, l.getNextLevel());
+	}
+
+	private Level findLevel(Level l, String name)
+	{
+		if (l == null)
+		{
+			return null;
+		}
+
+		if (l.getName().equals(name))
+		{
+			return l;
+		}
+		else
+		{
+			return findLevel(l.getNextLevel(), name);
+		}
 	}
 }

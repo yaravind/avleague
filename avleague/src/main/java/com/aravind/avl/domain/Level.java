@@ -6,10 +6,13 @@ import java.util.Set;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
+import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
 
 import static org.neo4j.graphdb.Direction.OUTGOING;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 @NodeEntity
 public class Level
@@ -20,15 +23,16 @@ public class Level
 	/**
 	 * Playoffs, Round 2, Semifinal, Quarterfinal, Finals, All Star
 	 */
+	@Indexed
 	@GraphProperty
 	private String name;
-
-	@RelatedTo (type = "FIXTURE", direction = OUTGOING)
-	private Set<Match> fixtures = new HashSet<Match>();
 
 	@Fetch
 	@RelatedTo (type = "NEXT", direction = OUTGOING)
 	private Level nextLevel;
+
+	@RelatedTo (type = "POOL", direction = OUTGOING)
+	private Set<Pool> pools = new HashSet<Pool>();
 
 	public Level()
 	{}
@@ -38,27 +42,30 @@ public class Level
 		name = StringUtil.capitalizeFirstLetter(n);
 	}
 
-	public Match conductMatch(Team teamA, Team teamB, Court court)
+	public Match conductMatch(Team teamA, Team teamB, Court court, Pool pool)
 	{
-		Match m = new Match(teamA, teamB);
+		checkArgument(pools.contains(pool), "%s is not valid for the %s", pool, this);
+
+		Match m = new Match(teamA, teamB, pool);
 		m.setPlayedOn(court);
-		fixtures.add(m);
+		pool.conductMatch(m);
+
 		return m;
+	}
+
+	public Set<Pool> getPools()
+	{
+		return pools;
+	}
+
+	public void setPools(Set<Pool> pools)
+	{
+		this.pools = pools;
 	}
 
 	public Long getNodeId()
 	{
 		return nodeId;
-	}
-
-	public Set<Match> getFixtures()
-	{
-		return fixtures;
-	}
-
-	public void setFixtures(Set<Match> fixtures)
-	{
-		this.fixtures = fixtures;
 	}
 
 	public void setNodeId(Long nodeId)
@@ -140,6 +147,23 @@ public class Level
 	@Override
 	public String toString()
 	{
-		return "Level [nodeId=" + nodeId + ", name=" + name + ", nextLevel=" + nextLevel + "]";
+		return "Level [nodeId=" + nodeId + ", name=" + name + ", pools=" + pools + ", nextLevel=" + nextLevel + "]";
+	}
+
+	public void addPool(Pool p)
+	{
+		pools.add(p);
+	}
+
+	public Pool findPoolByName(String poolName)
+	{
+		for (Pool p: pools)
+		{
+			if (poolName.equals(p.getName()))
+			{
+				return p;
+			}
+		}
+		return null;
 	}
 }

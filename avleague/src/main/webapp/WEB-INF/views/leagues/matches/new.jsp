@@ -8,38 +8,46 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
-<title>Matches</title>
+<title>New match for Pool ${pool.name}</title>
 </head>
 <body>
-<%
-out.println(request.getAttribute("levels"));
-%>
-	<f:form action="new" method="POST" commandName="newMatch">
-		<f:label path="pool">Pool </f:label>
-		<f:input path="pool" />
-		<br />
-		<label for="level">Level (If you doesn't see the Level, go back to the League and add the new Level)</label>
-		<select name="level">
-			<c:forEach items="${levels}" var="entry">
-				<option value="${entry.value}">${entry.value}</option>
+	<p>
+		Add new match for Pool <strong>${pool.name}</strong> of Level <strong>${level.name}</strong>
+	</p>
+	<f:form action="matches" method="POST">
+		<%-- commandName="newMatch" --%>
+		<label for="teamA">Team A </label>
+
+		<select name='teamA'>
+			<c:forEach items="${pool.teams}" var="team">
+				<option value="${team.nodeId}">${team.name}- ${team.nodeId}</option>
 			</c:forEach>
 		</select>
 		<br />
-		<f:label path="teamA.nodeId">Team A </f:label>
-		<f:select path="teamA.nodeId" items="${teamsOfCurrentLeague}" />
-		<br />
-		<f:label path="teamB.nodeId">Team B </f:label>
-		<f:select path="teamB.nodeId" items="${teamsOfCurrentLeague}" />
-		<br />
-		<f:label path="playedOnCourt">Court where this match will be played on </f:label>
-		<f:select path="playedOnCourt" items="${courts}" />
 		
+		<label for="teamB">Team A </label>
+
+		<select name='teamB'>
+			<c:forEach items="${pool.teams}" var="team">
+				<option value="${team.nodeId}">${team.name}- ${team.nodeId}</option>
+			</c:forEach>
+		</select>
 		<br />
-		<f:label path="time">Date and time for the match (MM-dd-yyyy HH:mm) HH = 0-23 </f:label>
-		<f:input path="time" />
 		
+		<label for="venueAndCourt">Court where this match will be played on </label>
+		<select name='venueAndCourt'>
+			<c:forEach items="${venues}" var="venue">
+				<c:forEach items="${venue.courts}" var="court">
+					<option value="${venue.name} - ${court.name}">${venue.name} - ${court.name}</option>
+				</c:forEach>
+			</c:forEach>
+		</select>
 		<br />
-		<input type="submit" value="Create" />
+		
+		<label for="time">Date and time for the match (MM-dd-yyyy HH:mm) HH = 0-23 </label>
+		<input name="time" />
+		<br />
+		<input type="submit" value="Add Match" />
 	</f:form>
 </body>
 </html>

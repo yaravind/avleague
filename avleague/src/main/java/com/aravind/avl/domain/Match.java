@@ -51,11 +51,11 @@ public class Match
 	public Match()
 	{}
 
-	public Match(Team team1, Team team2)
+	public Match(Team team1, Team team2, Pool p)
 	{
 		teamA = team1;
 		teamB = team2;
-
+		pool = p;
 		name = NAME_MAKER.join(teamA.getName(), "v", teamB.getName());
 	}
 
@@ -134,9 +134,9 @@ public class Match
 		return time;
 	}
 
-	public void setTime(Date time)
+	public void setTime(Date t)
 	{
-		this.time = time;
+		this.time = t;
 	}
 
 	@Override

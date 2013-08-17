@@ -23,6 +23,9 @@ import com.google.common.collect.Iterables;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import static com.google.common.collect.Iterables.get;
+import static com.google.common.collect.Iterables.getOnlyElement;
+
 @RunWith (SpringJUnit4ClassRunner.class)
 @ContextConfiguration ({ "/testContext.xml"})
 @Transactional
@@ -38,6 +41,12 @@ public class LeagueRepositoryTest
 	@Autowired
 	Neo4jTemplate template;
 
+	@Autowired
+	PoolRepository poolRepo;
+
+	@Autowired
+	TeamRepository teamRepo;
+
 	League l;
 
 	Team teamA;
@@ -49,6 +58,7 @@ public class LeagueRepositoryTest
 	Venue v;
 
 	Level level;
+	Pool pool;
 
 	@Before
 	public void setUp() throws ParseException
@@ -61,8 +71,12 @@ public class LeagueRepositoryTest
 		l.setEndDate(startDate);
 		l.setName("name");
 
+		// Always "attach" the entities to DB before you add them to Hash based collection
+		// http://static.springsource.org/spring-data/data-graph/snapshot-site/reference/html/#d5e807
+
 		teamA = new Team();
 		teamA.setName("Team A");
+		teamRepo.save(teamA);
 
 		p = new Player();
 		p.setName("Aravind Yarram");
@@ -72,12 +86,20 @@ public class LeagueRepositoryTest
 
 		teamB = new Team();
 		teamB.setName("Team B");
+		teamRepo.save(teamB);
 
 		l.addTeam(teamA);
 		l.addTeam(teamB);
 
 		level = new Level("Playoffs");
+
 		l.setLevel(level);
+
+		pool = new Pool("A");
+		pool.addTeam(teamA);
+		pool.addTeam(teamB);
+		pool = poolRepo.save(pool);
+		level.addPool(pool);
 
 		Level qf = new Level("Quarterfinal");
 		level.setNextLevel(qf);
@@ -111,22 +133,97 @@ public class LeagueRepositoryTest
 	@Test
 	public void saveMatch() throws ParseException
 	{
-		SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy kk.mm");
 		repo.save(l);
+		Match m = buildMatch(l);
 
-		Match m = l.conductMatch(teamA, teamB, Iterables.get(v.getCourts(), 0), level);
 		assertEquals("Match name maker test", teamA.getName() + " v " + teamB.getName(), m.getName());
-
-		m.setTime(df.parse("07-27-2013 13.30"));
-		m.setMvp(p);
-		m.setWinner(teamA);
-		m.setPool(new Pool("A"));
 		m = matchRepo.save(m);
 
 		assertNotNull(m);
 		assertNotNull(m.getPool().getNodeId());
 		assertNotNull(m.getPlayedOnCourt().getNodeId());
 		assertNotNull("Make sure match is saved when the league is saved", m.getNodeId());
+	}
+
+	@Test
+	public void findPool() throws ParseException
+	{
+		Match m = buildMatch(l);
+		m = matchRepo.save(m);
+		repo.save(l);
+
+		Pool result = repo.findPool(l.getName(), level.getName(), pool.getName());
+
+		assertNotNull(result.getNodeId());
+
+		assertNotNull(result.getFixtures());
+		assertNotNull(Iterables.getOnlyElement(result.getFixtures()));
+
+		assertNotNull(result.getTeams());
+		assertEquals(2, Iterables.size(result.getTeams()));
+
+		assertEquals(pool.getName(), result.getName());
+	}
+
+	@Test
+	public void findPoolWithNoMatches() throws ParseException
+	{
+		// Match m = buildMatch(l);
+		// m = matchRepo.save(m);
+		repo.save(l);
+
+		Pool result = repo.findPool(l.getName(), level.getName(), pool.getName());
+
+		assertNotNull(result.getNodeId());
+		assertEquals(0, Iterables.size(result.getFixtures()));
+
+		assertNotNull(result.getTeams());
+		assertEquals(2, Iterables.size(result.getTeams()));
+	}
+
+	@Test
+	public void findMatches() throws ParseException
+	{
+		Match m = buildMatch(l);
+		m = matchRepo.save(m);
+		repo.save(l);
+
+		assertNotNull(m.getNodeId());
+		assertNotNull(m.getPool().getNodeId());
+		assertNotNull(m.getPlayedOnCourt().getNodeId());
+
+		Iterable<Match> matches = repo.findMatches(l.getName(), level.getName(), pool.getName());
+		Match match = Iterables.getOnlyElement(matches);
+		assertNotNull("Only one match was saved so should return only single match.", match);
+
+		assertNotNull(match.getName());
+		assertEquals(m.getName(), match.getName());
+
+		assertNotNull(match.getTeamA());
+		assertEquals(m.getTeamA(), match.getTeamA());
+
+		assertNotNull(match.getTeamB());
+		assertEquals(m.getTeamB(), match.getTeamB());
+
+		assertNotNull(match.getTime());
+		assertEquals(m.getTime(), match.getTime());
+
+		assertNotNull(match.getPool());
+		assertEquals(m.getPool(), match.getPool());
+
+		assertNotNull(match.getPlayedOnCourt());
+		assertEquals(m.getPlayedOnCourt(), match.getPlayedOnCourt());
+	}
+
+	private Match buildMatch(League l) throws ParseException
+	{
+		SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy kk.mm");
+		Match m = l.conductMatch(teamA, teamB, get(v.getCourts(), 0), level, getOnlyElement(level.getPools()));
+
+		m.setTime(df.parse("07-27-2013 13.30"));
+		m.setMvp(p);
+		m.setWinner(teamA);
+		return m;
 	}
 
 	@Test
@@ -158,11 +255,12 @@ public class LeagueRepositoryTest
 	{
 		repo.save(l);
 		assertNotNull(l.getLevel().getNodeId());
+		assertNotNull(getOnlyElement(l.getLevel().getPools()).getNodeId());
 
 		Iterable<Level> levels = repo.findAllLevels(l.getNodeId());
 		assertNotNull(levels);
-		assertEquals("Order is important", "Playoffs", Iterables.get(levels, 0).getName());
-		assertEquals("Order is important", "Quarterfinal", Iterables.get(levels, 1).getName());
-		assertEquals("Order is important", "Semifinal", Iterables.get(levels, 2).getName());
+		assertEquals("Order is important", "Playoffs", get(levels, 0).getName());
+		assertEquals("Order is important", "Quarterfinal", get(levels, 1).getName());
+		assertEquals("Order is important", "Semifinal", get(levels, 2).getName());
 	}
 }

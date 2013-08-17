@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
-	pageEncoding="ISO-8859-1" session="false"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1" session="false"%>
 <%@ taglib uri="http://www.springframework.org/tags" prefix="s"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
@@ -13,7 +12,7 @@
 </head>
 <body>
 
-<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
+	<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
 
 	<a href="/avl">Home</a>
 	<br />
@@ -23,16 +22,13 @@
 				<tr valign="top">
 					<c:forEach items="${leagues}" var="league">
 						<td>
-							<p><strong>${league.name} - ${league.nodeId}</strong></p>
+							<p>
+								<strong>${league.name} - ${league.nodeId}</strong>
+							</p>
 							<p>
 								<em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em>
 							</p>
 							<p>
-							<a href="${cp}/leagues/${league.nodeId}/matches/new">Create matches</a>
-							<br />
-							<a href="${cp}/leagues/${league.name}/matches/">List matches</a>							
-							<br />
-							<!-- c:out value="${league.playedAt}"/ -->
 								<c:if test="${not empty league.playedAt}">
 									<ul>
 										<c:forEach items="${league.playedAt}" var="venue">
@@ -43,22 +39,36 @@
 								<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
 							</p>
 							<p>
-							<strong>Levels</strong><br />
-							<c:if test="${not empty levelsByLeague[league.nodeId]}">
+								<strong>Levels</strong><br />
+								<c:if test="${not empty league.allLevels}">
 									<ul>
-										<c:forEach items="${levelsByLeague[league.nodeId]}" var="level">
-											<li><strong>${level.name} - ${level.nodeId}</strong></li>
+										<c:forEach items="${league.allLevels}" var="level">
+											<li><strong>${level.name} - ${level.nodeId}</strong> <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools">Add Pool</a> <c:if test="${not empty level.pools}">
+													<ul>
+														<c:forEach items="${level.pools}" var="pool">
+															<li><a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}">Pool ${pool.name} - ${pool.nodeId}</a></li>
+															<ul>
+																<li>
+																	<form id="myform" method="post" action="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matchForm">
+																		<input type="submit" value="Create matches"/>
+																		<%-- <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches" onclick="this.parentNode.submit()">Create matches</a> --%>
+																	</form>
+																</li>
+																<li><a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches/">List matches</a></li>
+															</ul>
+														</c:forEach>
+													</ul>
+												</c:if></li>
 										</c:forEach>
 									</ul>
 								</c:if>
 								<a href="${cp}/leagues/${league.name}/levels/">Add Level</a>
-							</p>
-							 <c:forEach items="${league.teams}" var="team">
+							</p> <c:forEach items="${league.teams}" var="team">
 								<li>
-									<p>${team.name} - ${team.nodeId}</p>
+									<p>${team.name}-${team.nodeId}</p>
 									<ul>
 										<c:forEach items="${team.players}" var="player">
-											<li>${player.name} - ${player.nodeId }</li>
+											<li>${player.name}-${player.nodeId }</li>
 										</c:forEach>
 									</ul>
 								</li>

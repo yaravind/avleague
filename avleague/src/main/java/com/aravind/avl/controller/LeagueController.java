@@ -3,7 +3,6 @@ package com.aravind.avl.controller;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +31,6 @@ import com.aravind.avl.domain.Match;
 import com.aravind.avl.domain.MatchRepository;
 import com.aravind.avl.domain.Pool;
 import com.aravind.avl.domain.PoolRepository;
-import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 import com.aravind.avl.domain.Venue;
 import com.aravind.avl.domain.VenueRepository;
@@ -90,9 +88,12 @@ public class LeagueController
 		for (League l: leagues)
 		{
 			template.fetch(l.getPlayedAt());
-			levelsByLeague.put(l.getNodeId(), leagueRepo.findAllLevels(l.getNodeId()));
+			for (Level level: l.getAllLevels())
+			{
+				template.fetch(level.getPools());
+			}
 		}
-		model.addAttribute("levelsByLeague", levelsByLeague);
+
 		return "/leagues/list";
 	}
 
@@ -109,113 +110,114 @@ public class LeagueController
 		return "redirect:list";
 	}
 
-	@RequestMapping (value = "/leagues/{leagueId}/matches/new", method = RequestMethod.GET)
-	public String newMatch(@PathVariable Long leagueId, Model model)
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matchForm", method = RequestMethod.POST)
+	public String matchForm(@PathVariable String leagueName, @PathVariable String levelName, @PathVariable String poolName,
+			Model model)
 	{
-		LOG.debug("Adding an empty Match binding to model");
-		Match m = new Match();
-		model.addAttribute("newMatch", m);
+		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Found league: {}", l);
 
-		Map<Long, String> teams = new LinkedHashMap<Long, String>();
+		Level level = l.findLevelByName(levelName);
 
-		League league = leagueRepo.findOne(leagueId);
-		template.fetch(league.getPlayedAt());
-		LOG.debug("Venues {}", league.getPlayedAt());
+		template.fetch(level.getPools());
+		Pool pool = level.findPoolByName(poolName);
+		LOG.debug("Retrieved pool {}", pool);
 
-		for (Team t: league.getTeams())
-		{
-			teams.put(t.getNodeId(), t.getName());
-		}
-		model.addAttribute("teamsOfCurrentLeague", teams);
+		template.fetch(l.getPlayedAt());
+		LOG.debug("Venues {}", l.getPlayedAt());
 
-		Map<String, String> levels = new LinkedHashMap<String, String>();
-		for (Level l: leagueRepo.findAllLevels(league.getNodeId()))
-		{
-			levels.put(l.getName(), l.getName());
-		}
-		model.addAttribute("levels", levels);
+		model.addAttribute("venues", l.getPlayedAt());
+		model.addAttribute("pool", pool);
+		model.addAttribute("level", level);
 
-		List<String> courts = new ArrayList<String>();
-		for (Venue v: league.getPlayedAt())
-		{
-			for (Court c: v.getCourts())
-			{
-				String label = v.getName() + " - " + c.getName();
-				courts.add(label);
-				LOG.debug("Adding court {}", label);
-			}
-		}
-
-		model.addAttribute("courts", courts);
 		return "/leagues/matches/new";
 	}
 
 	@Transactional
-	@RequestMapping (value = "/leagues/{leagueName}/matches/", method = RequestMethod.GET)
-	public String matches(@PathVariable String leagueName, Model model)
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matches", method = RequestMethod.GET)
+	public String matches(@PathVariable String leagueName, @PathVariable String poolName, @PathVariable String levelName,
+			Model model)
 	{
-		LOG.debug("Finding league by name: [{}]", leagueName);
-		League l = leagueRepo.findByName(leagueName);
-		LOG.debug("Found league: {}", l);
+		LOG.debug("Retrieving matches for {}, {}, {}", new Object[]{ leagueName, levelName, poolName});
 
-		LOG.debug("Fetching matches");
-		Iterable<Level> levels = leagueRepo.findAllLevels(l.getNodeId());
-		for (Level level: levels)
-		{
-			template.fetch(level.getFixtures());
+		Iterable<Match> matches = leagueRepo.findMatches(leagueName, levelName, poolName);
+		LOG.debug("Found {}", matches);
+		model.addAttribute("leagueName", leagueName);
+		model.addAttribute("poolName", poolName);
+		model.addAttribute("levelName", levelName);
+		model.addAttribute("matches", matches);
 
-			LOG.debug("After fetch: Level {} Matches {}", level, level.getFixtures());
-		}
-
-		model.addAttribute("league", l);
-		model.addAttribute("levels", levels);
 		return "/leagues/matches/list";
 	}
 
 	@Transactional
-	@RequestMapping (value = "/leagues/{leagueId}/matches/new", method = RequestMethod.POST)
-	public String newMatch(@PathVariable Long leagueId, @RequestParam ("teamA.nodeId") Long teamA,
-			@RequestParam ("teamB.nodeId") Long teamB, @RequestParam ("pool") String pool, @RequestParam ("level") String level,
-			@RequestParam ("playedOnCourt") String venueAndCourt, @RequestParam ("time") String time)
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matches/(matchName)", method = RequestMethod.GET)
+	public String matches(@PathVariable String leagueName, @PathVariable String poolName, @PathVariable String levelName,
+			@PathVariable String matchName, Model model)
 	{
-		LOG.debug("Creating new match for League id: {}", leagueId);
+		LOG.debug("Retrieving match[{}] for {}, {}, {}", new Object[]{ matchName, leagueName, levelName, poolName});
+
+		Iterable<Match> matches = leagueRepo.findMatches(leagueName, levelName, poolName);
+
+		// League l = leagueRepo.findByName(leagueName);
+		// LOG.debug("Found league: {}", l);
+		//
+		// Level level = l.findLevelByName(levelName);
+		//
+		// template.fetch(level.getPools());
+		// Pool pool = level.findPoolByName(poolName);
+		// LOG.debug("Retrieved pool {}", pool);
+		//
+		// template.fetch(pool.getFixtures());
+		// LOG.debug("Retrieved matches {}", pool.getFixtures());
+
+		model.addAttribute("league", leagueName);
+		model.addAttribute("pool", poolName);
+		model.addAttribute("level", levelName);
+		model.addAttribute("matches", matches);
+
+		return "/leagues/matches/matchDetails.jsp";
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matches", method = RequestMethod.POST)
+	public String newMatch(@PathVariable String leagueName, @PathVariable String levelName, @PathVariable String poolName,
+			@RequestParam Long teamA, @RequestParam Long teamB, @RequestParam String venueAndCourt, @RequestParam String time)
+	{
+		LOG.debug("Creating new match for League id: {}", leagueName);
 		LOG.debug("Creating new match between Team A: {}", teamA);
 		LOG.debug("and Team B: {}", teamB);
-		LOG.debug("in Pool: {}", pool);
+		LOG.debug("in Pool: {}", poolName);
 		LOG.debug("on Court: {}", venueAndCourt);
-		LOG.debug("for Level : {}", level);
+		LOG.debug("for Level : {}", levelName);
 		// Stores the given entity in the graph, if the entity is already
 		// attached to the graph, the node is updated,
 		// otherwise a new node is created.
-		League league = leagueRepo.findOne(leagueId);
+		League league = leagueRepo.findByName(leagueName);
 		LOG.debug("Before fetch {}", league.getPlayedAt());
 		template.fetch(league.getPlayedAt());
 		LOG.debug("After fetch {}", league.getPlayedAt());
 
+		Level level = league.findLevelByName(levelName);
+		template.fetch(level.getPools());
+		Pool pool = level.findPoolByName(poolName);
+		template.fetch(pool.getTeams());
+
+		Match match = null;
 		String venueName = venueAndCourt.split(" - ")[0];
 		String courtName = venueAndCourt.split(" - ")[1];
-
 		Venue venueByName = league.findVenueByName(venueName);
-		Match match = null;
 		if (venueByName == null)
 		{
-			LOG.error("Couldn't fine venue with name {}", venueName);
+			LOG.error("Couldn't find venue with name {}", venueName);
 			return "redirect:list";
 		}
 		else
 		{
 			match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venueByName.findCourtByName(courtName),
-					levelRepo.findByName(level));
+					league.findLevelByName(levelName), pool);
 		}
 
-		Pool p = poolRepo.findByName(pool);
-		if (p == null)
-		{
-			LOG.debug("Didn't find Pool with name {} so creating one", pool);
-			p = new Pool(pool);
-			poolRepo.save(p);
-		}
-		match.setPool(p);
 		try
 		{
 			match.setTime(DateUtils.parseDate(time, new String[]{ "MM-dd-yyyy HH:mm"}));
@@ -224,13 +226,14 @@ public class LeagueController
 		{
 			LOG.error("Can't set the time of the match", e);
 		}
+		LOG.debug("Saving {}", match);
 		matchRepo.save(match);
+		LOG.debug("After save {}", match);
 
-		LOG.debug("Saved Match {}", match);
+		LOG.debug("Saving {}", pool);
+		poolRepo.save(pool);
 
-		template.fetch(match);
-
-		return "redirect:list";
+		return "redirect:" + String.format("/leagues/%s/levels/%s/pools/%s", leagueName, levelName, poolName);
 	}
 
 	@RequestMapping (value = "/admin/populate", method = RequestMethod.GET)
@@ -271,7 +274,63 @@ public class LeagueController
 
 		model.addAttribute("leagues", leagues);
 
-		return "/leagues/list";
+		return "redirect:/leagues/list";
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools", method = RequestMethod.GET)
+	public String pools(@PathVariable ("leagueName") String leagueName, @PathVariable ("levelName") String levelName, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+
+		model.addAttribute("league", l);
+		Level level = l.findLevelByName(levelName);
+		template.fetch(level.getPools());
+		LOG.debug("Found level {} with name", level, levelName);
+		model.addAttribute("level", level);
+		return "/leagues/newPool";
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}", method = RequestMethod.GET)
+	public String pools(@PathVariable String leagueName, @PathVariable String levelName, @PathVariable String poolName, Model model)
+	{
+		Pool p = leagueRepo.findPool(leagueName, levelName, poolName);
+
+		LOG.debug("Found pool with name {}: {}", poolName, p);
+
+		template.fetch(p.getFixtures());
+
+		model.addAttribute("pool", p);
+
+		model.addAttribute("leagueName", leagueName);
+		model.addAttribute("poolName", p.getName());
+		model.addAttribute("levelName", levelName);
+		model.addAttribute("matches", p.getFixtures());
+
+		return "/leagues/pool";
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools", method = RequestMethod.POST)
+	public String pools(@PathVariable ("leagueName") String leagueName, @PathVariable ("levelName") String levelName,
+			@RequestParam String poolName, @RequestParam List<Long> teams, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		Level level = l.findLevelByName(levelName);
+		LOG.debug("Found {} with name", level, levelName);
+
+		Pool p = new Pool(poolName);
+		for (Long id: teams)
+		{
+			p.addTeam(teamRepo.findOne(id));
+		}
+		level.addPool(p);
+		LOG.debug("Before saving level with pool {}", level);
+		levelRepo.save(level);
+		LOG.debug("After saving level with pool {}", level);
+
+		model.addAttribute("league", l);
+
+		return "redirect:list";
 	}
 
 	@RequestMapping (value = "/leagues/{leagueName}/venues", method = RequestMethod.GET)
@@ -336,9 +395,9 @@ public class LeagueController
 	public String levels(@PathVariable ("leagueName") String leagueName, Model model)
 	{
 		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Levels {}", l.getAllLevels());
 		model.addAttribute("league", l);
 
-		model.addAttribute("levels", leagueRepo.findAllLevels(l.getNodeId()));
 		return "/leagues/newLevel";
 	}
 
@@ -397,7 +456,7 @@ public class LeagueController
 		}
 		model.addAttribute("league", l);
 		model.addAttribute("levels", leagueRepo.findAllLevels(l.getNodeId()));
-		return "redirect:list";
+		return "redirect:/leagues/list";
 	}
 
 	private Venue buildVenue(String venue, String court1, String court2, String court3)
