@@ -23,3 +23,4 @@ Local Setup
 
 Domain Model
 ------------
+![Domain](https://raw.github.com/funpluscharity/avleague/master/avleague/src/test/resources/domain-model.jpg)
