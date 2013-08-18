@@ -20,3 +20,6 @@ Local Setup
 * **package tomcat7:run** using m2eclipse. This runs embedded Tomcat 7
 * The app is accessible at **http://localhost:9090/avl/**
 * If running for first time then bootstrap the seed data by doing a HTTP GET to **http://localhost:9090/avl/admin/populate**
+
+Domain Model
+------------
