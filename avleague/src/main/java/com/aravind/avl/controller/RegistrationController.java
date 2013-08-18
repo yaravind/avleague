@@ -120,12 +120,12 @@ public class RegistrationController
 
 	@Transactional
 	@RequestMapping (value = "/newTeam", method = RequestMethod.POST)
-	public String newTeam(@RequestParam String newTeamName, @RequestParam ("players") List<String> ids,
-			@RequestParam ("isCaptain") String captainName, @RequestParam ("newPlayer1") String newPlayer1,
-			@RequestParam ("newPlayer2") String newPlayer2, @RequestParam ("newPlayer3") String newPlayer3,
-			@RequestParam ("newPlayer4") String newPlayer4, @RequestParam ("newPlayer5") String newPlayer5,
-			@RequestParam ("newPlayer6") String newPlayer6, @RequestParam ("newPlayer7") String newPlayer7,
-			@RequestParam ("newPlayer8") String newPlayer8, Model model)
+	public String newTeam(@RequestParam String teamName, @RequestParam String newTeamName,
+			@RequestParam ("players") List<String> ids, @RequestParam ("isCaptain") String captainName,
+			@RequestParam ("newPlayer1") String newPlayer1, @RequestParam ("newPlayer2") String newPlayer2,
+			@RequestParam ("newPlayer3") String newPlayer3, @RequestParam ("newPlayer4") String newPlayer4,
+			@RequestParam ("newPlayer5") String newPlayer5, @RequestParam ("newPlayer6") String newPlayer6,
+			@RequestParam ("newPlayer7") String newPlayer7, @RequestParam ("newPlayer8") String newPlayer8, Model model)
 	{
 		List<Player> playerList = Lists.newArrayList();
 
@@ -133,8 +133,13 @@ public class RegistrationController
 		{
 			LOG.debug("New name provided for the team: {}", newTeamName);
 			model.addAttribute("teamName", newTeamName.replaceAll(newTeamName, " "));
+
 			Team existingTeam = teamRepo.findByName(newTeamName);
-			LOG.error("Team with the name {} already exists? {}", newTeamName, existingTeam != null);
+			if (existingTeam != null)
+			{
+				LOG.error("Team with the new name {} already exists {}", newTeamName, existingTeam);
+			}
+			model.addAttribute("renamedFromTeamName", teamName);
 		}
 		List<String> newPlayers = newPlayers(newPlayer1, newPlayer2, newPlayer3, newPlayer4, newPlayer5, newPlayer6, newPlayer7,
 				newPlayer8);
@@ -175,8 +180,9 @@ public class RegistrationController
 	 */
 	@Transactional
 	@RequestMapping (value = "/end", method = RequestMethod.POST)
-	public String end(@ModelAttribute ("teamName") String teamName, @ModelAttribute ("designatedCaptain") String designatedCaptain,
-			@RequestParam ("playerIds") List<String> playerIds, @ModelAttribute ("playerList") List<Player> playerList,
+	public String end(@RequestParam String renamedFromTeamName, @ModelAttribute ("teamName") String teamName,
+			@ModelAttribute ("designatedCaptain") String designatedCaptain, @RequestParam ("playerIds") List<String> playerIds,
+			@ModelAttribute ("playerList") List<Player> playerList,
 			@ModelAttribute ("matchedPlayers") TreeMap<String, Collection<Player>> matchedPlayers, Model model)
 	{
 		Set<Player> pls = new TreeSet<Player>(Player.NAME_CASE_INSENSITIVE_COMPARATOR);
@@ -202,6 +208,7 @@ public class RegistrationController
 		League currentLeague = leagueRepo.findCurrentLeague();
 
 		Team team = teamRepo.findByName(teamName);
+
 		if (team == null)
 		{
 			// new team
@@ -232,6 +239,10 @@ public class RegistrationController
 				createPlayedWithRelation(currentLeague, team, p);
 			}
 		}
+
+		Team previouslyKnownAs = teamRepo.findByName(renamedFromTeamName);
+		team.setPreviouslyKnownAs(previouslyKnownAs);
+		teamRepo.save(team);
 
 		LOG.debug("Final players: {}", team.getPlayers());
 

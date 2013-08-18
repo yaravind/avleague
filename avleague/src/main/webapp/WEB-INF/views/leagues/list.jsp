@@ -39,7 +39,7 @@
 								<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
 							</p>
 							<p>
-								<strong>Levels</strong><br />
+								<strong><a href="${cp}/leagues/${league.name}/levels/">Levels</a></strong><br />
 								<c:if test="${not empty league.allLevels}">
 									<ul>
 										<c:forEach items="${league.allLevels}" var="level">
@@ -50,7 +50,7 @@
 															<ul>
 																<li>
 																	<form id="myform" method="post" action="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matchForm">
-																		<input type="submit" value="Create matches"/>
+																		<input type="submit" value="Create matches" />
 																		<%-- <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches" onclick="this.parentNode.submit()">Create matches</a> --%>
 																	</form>
 																</li>
@@ -62,17 +62,10 @@
 										</c:forEach>
 									</ul>
 								</c:if>
-								<a href="${cp}/leagues/${league.name}/levels/">Add Level</a>
-							</p> <c:forEach items="${league.teams}" var="team">
-								<li>
-									<p>${team.name}-${team.nodeId}</p>
-									<ul>
-										<c:forEach items="${team.players}" var="player">
-											<li>${player.name}-${player.nodeId }</li>
-										</c:forEach>
-									</ul>
-								</li>
-							</c:forEach>
+								<a href="${cp}/leagues/${league.name}/levelForm/">Add Level</a>
+							</p> 
+							<c:set var="teams" scope="request" value="${league.teams}"/>
+							<jsp:include page="teams/teamBrief.jsp" />
 						</td>
 					</c:forEach>
 				</tr>

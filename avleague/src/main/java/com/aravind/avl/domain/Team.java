@@ -29,8 +29,21 @@ public class Team
 	@RelatedTo (type = "IN_POOL")
 	private Pool pool;
 
+	@RelatedTo (type = "PREVIOUSLY_KNOWN_AS")
+	private Team previouslyKnownAs;
+
 	public Team()
 	{}
+
+	public Team getPreviouslyKnownAs()
+	{
+		return previouslyKnownAs;
+	}
+
+	public void setPreviouslyKnownAs(Team previouslyKnownAs)
+	{
+		this.previouslyKnownAs = previouslyKnownAs;
+	}
 
 	public String getName()
 	{

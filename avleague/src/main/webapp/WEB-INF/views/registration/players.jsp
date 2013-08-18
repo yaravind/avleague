@@ -19,6 +19,7 @@
 
 	<f:form action="newTeam" method="post">
 		<h2>${teamName}</h2>
+		<input type="hidden" name="teamName" value="${teamName}"/>
 		<label for="newTeamName"> Register with new name: <input type="text" name="newTeamName"></label>
 		<br />
 		<br />

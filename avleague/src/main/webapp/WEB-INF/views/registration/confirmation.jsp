@@ -15,6 +15,7 @@
 	<h1>${newTeamName}</h1>
 
 	<form action="end" method="POST">
+	<input type="hidden" name="renamedFromTeamName" value="${renamedFromTeamName}"/>
 		<ul>
 			<c:forEach items="${playerList}" var="p">
 				<input type="hidden" name="playerIds" value="${p.nodeId }" />

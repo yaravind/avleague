@@ -4,7 +4,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -37,12 +36,10 @@ import com.aravind.avl.domain.VenueRepository;
 import com.aravind.avl.service.LeagueFactory;
 import com.aravind.avl.service.LeaguePopulator;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 
 @Controller
 public class LeagueController
 {
-
 	private transient final Logger LOG = LoggerFactory.getLogger(getClass());
 
 	@Autowired
@@ -84,7 +81,6 @@ public class LeagueController
 		Collection<League> leagues = IteratorUtil.asCollection(all);
 		model.addAttribute("leagues", leagues);
 
-		Map<Long, Iterable<Level>> levelsByLeague = Maps.newHashMap();
 		for (League l: leagues)
 		{
 			template.fetch(l.getPlayedAt());
@@ -151,32 +147,21 @@ public class LeagueController
 	}
 
 	@Transactional
-	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matches/(matchName)", method = RequestMethod.GET)
+	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matches/{matchName}", method = RequestMethod.GET)
 	public String matches(@PathVariable String leagueName, @PathVariable String poolName, @PathVariable String levelName,
 			@PathVariable String matchName, Model model)
 	{
 		LOG.debug("Retrieving match[{}] for {}, {}, {}", new Object[]{ matchName, leagueName, levelName, poolName});
 
-		Iterable<Match> matches = leagueRepo.findMatches(leagueName, levelName, poolName);
-
-		// League l = leagueRepo.findByName(leagueName);
-		// LOG.debug("Found league: {}", l);
-		//
-		// Level level = l.findLevelByName(levelName);
-		//
-		// template.fetch(level.getPools());
-		// Pool pool = level.findPoolByName(poolName);
-		// LOG.debug("Retrieved pool {}", pool);
-		//
-		// template.fetch(pool.getFixtures());
-		// LOG.debug("Retrieved matches {}", pool.getFixtures());
+		Match match = leagueRepo.findMatch(leagueName, levelName, poolName, matchName);
+		LOG.debug("Found {}", match);
 
 		model.addAttribute("league", leagueName);
 		model.addAttribute("pool", poolName);
 		model.addAttribute("level", levelName);
-		model.addAttribute("matches", matches);
+		model.addAttribute("match", match);
 
-		return "/leagues/matches/matchDetails.jsp";
+		return "/leagues/matches/matchDetails";
 	}
 
 	@Transactional
@@ -391,14 +376,28 @@ public class LeagueController
 		return "redirect:list";
 	}
 
-	@RequestMapping (value = "/leagues/{leagueName}/levels", method = RequestMethod.GET)
-	public String levels(@PathVariable ("leagueName") String leagueName, Model model)
+	@RequestMapping (value = "/leagues/{leagueName}/levelForm", method = RequestMethod.GET)
+	public String levelForm(@PathVariable ("leagueName") String leagueName, Model model)
 	{
 		League l = leagueRepo.findByName(leagueName);
 		LOG.debug("Levels {}", l.getAllLevels());
 		model.addAttribute("league", l);
 
 		return "/leagues/newLevel";
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/levels", method = RequestMethod.GET)
+	public String levels(@PathVariable ("leagueName") String leagueName, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Levels {}", l.getAllLevels());
+		for (Level lev: l.getAllLevels())
+		{
+			template.fetch(lev.getPools());
+		}
+		model.addAttribute("league", l);
+
+		return "/leagues/levels/list";
 	}
 
 	@Transactional
