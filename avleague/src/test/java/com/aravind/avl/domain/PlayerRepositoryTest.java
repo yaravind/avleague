@@ -1,12 +1,17 @@
 package com.aravind.avl.domain;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.neo4j.conversion.EndResult;
 import org.springframework.data.neo4j.conversion.Handler;
+import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
@@ -24,6 +29,18 @@ public class PlayerRepositoryTest
 {
 	@Autowired
 	PlayerRepository repo;
+
+	@Autowired
+	LeagueRepository leagueRepo;
+
+	@Autowired
+	TeamRepository teamRepo;
+
+	@Autowired
+	Neo4jTemplate template;
+
+	@Autowired
+	GraphDatabaseService gds;
 
 	Player p;
 
@@ -138,5 +155,45 @@ public class PlayerRepositoryTest
 
 		result = repo.findByName("Aravind Y");
 		assertNotNull("findByPropertyValue should be used for EXACT matches", result);
+	}
+
+	@Test
+	public void playedForInLeague() throws ParseException
+	{
+		SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+
+		League june = new League();
+		june.setName("June League");
+		leagueRepo.save(june);
+
+		Team teamA = new Team();
+		teamA.setName("Team A");
+		teamRepo.save(teamA);
+
+		p = new Player();
+		p.setName("Aravind Yarram");
+		repo.save(p);
+
+		PlayerTeamLeague playedWithJune = p.playedForInLeague(teamA, df.parse("01/06/2013"), june);
+		assertNotNull(playedWithJune);
+		teamA.addPlayer(p);
+
+		League sept = new League();
+		sept.setName("September League");
+		leagueRepo.save(sept);
+
+		PlayerTeamLeague playedWithSept = p.playedForInLeague(teamA, df.parse("01/09/2013"), sept);
+		assertNotNull(playedWithSept);
+		repo.save(p);
+
+		Player result = repo.findOne(p.getNodeId());
+		assertNotNull(result);
+		template.fetch(result.getPlayedforInLeague());
+		assertEquals(2, result.getPlayedforInLeague().size());
+
+		for (PlayerTeamLeague pp: result.getPlayedforInLeague())
+		{
+			System.err.println(pp);
+		}
 	}
 }

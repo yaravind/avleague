@@ -1,18 +1,23 @@
 package com.aravind.avl.controller;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import com.aravind.avl.domain.League;
+import com.aravind.avl.domain.Player;
 import com.aravind.avl.domain.PlayerRepository;
+import com.aravind.avl.domain.PlayerTeamLeague;
 import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 
@@ -26,6 +31,9 @@ public class TeamController
 
 	@Autowired
 	private PlayerRepository playerRepo;
+
+	@Autowired
+	Neo4jTemplate template;
 
 	@RequestMapping (value = "/teams", method = RequestMethod.GET)
 	public String allTeams(Model model)
@@ -45,7 +53,25 @@ public class TeamController
 		Team team = teamRepo.findByName(teamName);
 		LOG.debug("Finding team with name {}: {}", teamName, team);
 
+		template.fetch(team.getPreviouslyKnownAs());
+
+		List<String> leaguesContestedIn = teamRepo.findLeaguesContestedIn(teamName);
+		LOG.debug("Leagues contested in {}", leaguesContestedIn);
+
+		List<League> leaguesWithLevels = teamRepo.findLeaguesLevelsAndPools(teamName);
+		LOG.debug("Leagues and Levels {}", leaguesWithLevels);
+
+		for (Player p: team.getPlayers())
+		{
+			for (PlayerTeamLeague ptl: p.getPlayedforInLeague())
+			{
+				template.fetch(ptl.getInLeague());
+			}
+		}
 		model.addAttribute("team", team);
+		model.addAttribute("leaguesContestedIn", leaguesContestedIn);
+		model.addAttribute("leagues", leaguesWithLevels);
+
 		return "leagues/teams/teamDetails";
 	}
 }

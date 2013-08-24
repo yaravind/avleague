@@ -50,11 +50,11 @@ public class LeaguePopulator
 				{
 					if (p.isCaptain())
 					{
-						p.playedWithAsCaptain(t, l.getStartDate(), l);
+						p.playedForInLeagueAsCaptain(t, l.getStartDate(), l);
 					}
 					else
 					{
-						p.playedWith(t, l.getStartDate(), l);
+						p.playedForInLeague(t, l.getStartDate(), l);
 					}
 				}
 			}

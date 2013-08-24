@@ -8,14 +8,16 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-<title>Players of ${newTeamName}</title>
+<title>Players of <c:if test="${not empty newTeamName}"> ${newTeamName}</c:if><c:if test="${not empty teamName}"> ${teamName}</c:if></title>
 </head>
 <body>
 
-	<h1>${newTeamName}</h1>
+	<h1><c:if test="${not empty newTeamName}"> ${newTeamName}</c:if><c:if test="${not empty teamName}"> ${teamName}</c:if></h1>
 
 	<form action="end" method="POST">
 	<input type="hidden" name="renamedFromTeamName" value="${renamedFromTeamName}"/>
+	<input type="hidden" name="teamName" value="${teamName}"/>
+	<input type="hidden" name="participatedInEarlierLeague" value="${participatedInEarlierLeague}"/>
 		<ul>
 			<c:forEach items="${playerList}" var="p">
 				<input type="hidden" name="playerIds" value="${p.nodeId }" />
@@ -35,11 +37,11 @@
 
 		<ul>
 			<c:forEach var="entry" items="${matchedPlayers}">
-				<li><input type="checkbox" name="players" value="${playerView.playerId}" />${entry.key}
+				<li><input type="checkbox" name="players" value="${entry.key}" />${entry.key}
 					<ul>
 						<c:forEach var="matchedPlayer" items="${entry.value}">
 							<li><input type="checkbox" name="playerIds" value="${matchedPlayer.nodeId}" /> ${matchedPlayer.name}. Played with <c:forEach
-									var="playedRelation" items="${matchedPlayer.playedWith}">
+									var="playedRelation" items="${matchedPlayer.playedforInLeague}">
 									<em>${playedRelation.team.name}</em> during <em><fmt:formatDate type="date" value="${playedRelation.during}" /></em>.
 				 			</c:forEach></li>
 						</c:forEach>

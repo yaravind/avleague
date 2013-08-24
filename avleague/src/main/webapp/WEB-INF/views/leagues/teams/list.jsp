@@ -16,6 +16,16 @@
 
 	<a href="/avl">Home</a>
 	<br />
-	<jsp:include page="teamBrief.jsp" />
+
+	<ol>
+		<c:forEach items="${teams}" var="team">
+			<li>
+				<p>
+					<a href="${cp}/teams/${team.name}">${team.name}-${team.nodeId}</a>
+				</p> 
+				<jsp:include page="teamBrief.jsp" />
+			</li>
+		</c:forEach>
+	</ol>
 </body>
 </html>

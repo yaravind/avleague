@@ -8,9 +8,8 @@
 	<ul>
 		<li>Leagues
 			<ul>
-				<li><a href="leagues/list">List all leagues.</a></li>
+				<li><a href="leagues">List all leagues.</a></li>
 				<li><a href="leagues/new">Organize new league.</a></li>
-				<li><a href="leagues/delete">Cancel an existing league.</a></li>
 			</ul>
 		</li>
 		<li>Registrations

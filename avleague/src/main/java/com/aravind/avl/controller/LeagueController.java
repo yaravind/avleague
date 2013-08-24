@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -28,14 +29,17 @@ import com.aravind.avl.domain.Level;
 import com.aravind.avl.domain.LevelRepository;
 import com.aravind.avl.domain.Match;
 import com.aravind.avl.domain.MatchRepository;
+import com.aravind.avl.domain.Player;
 import com.aravind.avl.domain.Pool;
 import com.aravind.avl.domain.PoolRepository;
+import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 import com.aravind.avl.domain.Venue;
 import com.aravind.avl.domain.VenueRepository;
 import com.aravind.avl.service.LeagueFactory;
 import com.aravind.avl.service.LeaguePopulator;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
 @Controller
 public class LeagueController
@@ -74,7 +78,7 @@ public class LeagueController
 		return "/leagues/new";
 	}
 
-	@RequestMapping (value = "/leagues/list", method = RequestMethod.GET)
+	@RequestMapping (value = "/leagues", method = RequestMethod.GET)
 	public String list(Model model)
 	{
 		Iterable<League> all = leagueRepo.findAll();
@@ -93,6 +97,47 @@ public class LeagueController
 		return "/leagues/list";
 	}
 
+	@RequestMapping (value = "/leagues/{leagueName}", method = RequestMethod.GET)
+	public String leagues(@PathVariable String leagueName, Model model)
+	{
+		LOG.debug("Finding details for {}", leagueName);
+
+		League l = leagueRepo.findByName(leagueName);
+
+		System.err.println(l.getPlayedAt());
+		template.fetch(l.getPlayedAt());
+		System.err.println(l.getPlayedAt());
+		for (Level level: l.getAllLevels())
+		{
+			template.fetch(level.getPools());
+		}
+		Map<String, List<Player>> teamToPlayers = Maps.newHashMap();
+		for (Team t: l.getTeams())
+		{
+			List<Player> players = teamRepo.findPlayers(t.getNodeId(), l.getNodeId());
+			LOG.debug("For Team {} Players {}", t.getNodeId(), players);
+			teamToPlayers.put(t.getName(), players);
+		}
+
+		model.addAttribute("teamToPlayers", teamToPlayers);
+		model.addAttribute("league", l);
+
+		return "/leagues/league";
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/{leagueName}", method = RequestMethod.DELETE)
+	public String delete(@PathVariable String leagueName, Model model)
+	{
+		LOG.debug("Deleting league with name: {}", leagueName);
+
+		League found = leagueRepo.findByName(leagueName);
+		LOG.debug("Deleting league entity: {}", found);
+		leagueRepo.delete(found);
+
+		return "redirect:/leagues";
+	}
+
 	@Transactional
 	@RequestMapping (value = "/leagues/new", method = RequestMethod.POST)
 	public String newLeague(@ModelAttribute League newLeague)
@@ -103,7 +148,7 @@ public class LeagueController
 		// otherwise a new node is created.
 		leagueRepo.save(newLeague);
 
-		return "redirect:list";
+		return "redirect:" + newLeague.getName();
 	}
 
 	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matchForm", method = RequestMethod.POST)

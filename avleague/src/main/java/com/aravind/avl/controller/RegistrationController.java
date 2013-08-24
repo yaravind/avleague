@@ -20,6 +20,7 @@ import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -28,9 +29,9 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
-import com.aravind.avl.domain.PlayedWith;
 import com.aravind.avl.domain.Player;
 import com.aravind.avl.domain.PlayerRepository;
+import com.aravind.avl.domain.PlayerTeamLeague;
 import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 import com.google.common.collect.Lists;
@@ -38,7 +39,7 @@ import com.google.common.collect.Maps;
 
 @Controller
 @RequestMapping ("/registration")
-@SessionAttributes ({ "teamName", "designatedCaptain", "playerList", "matchedPlayers"})
+@SessionAttributes ({ "teamName", "designatedCaptain", "playerList", "matchedPlayers", "participatedInEarlierLeague"})
 public class RegistrationController
 {
 	private transient final Logger LOG = LoggerFactory.getLogger(getClass());
@@ -58,13 +59,15 @@ public class RegistrationController
 	@RequestMapping (method = RequestMethod.GET)
 	public String get()
 	{
-		return "/registration/start";
+		return "registration/start";
 	}
 
 	@Transactional
 	@RequestMapping (value = "/start", method = RequestMethod.POST)
 	public String hasParticipatedEarlier(@RequestParam boolean participatedInEarlierLeague, Model model)
 	{
+		model.addAttribute("participatedInEarlierLeague", participatedInEarlierLeague);
+
 		if (participatedInEarlierLeague)
 		{
 			LOG.debug("Participated in earlier leagues. Retrieving the past league teams.");
@@ -80,13 +83,14 @@ public class RegistrationController
 		else
 		{
 			LOG.debug("Did not participate in earlier leagues. Redirecting to register the new one.");
+			return "/registration/players";
 		}
 		return "/registration/leagues";
 	}
 
 	@Transactional
 	@RequestMapping (value = "/selectTeam", method = RequestMethod.POST)
-	public String selectTeam(@RequestParam Long selectedTeam, Model model)
+	public String selectTeam(@RequestParam Long selectedTeam, @RequestParam boolean participatedInEarlierLeague, Model model)
 	{
 		String q = "START t=node({teamId}) MATCH player-[:PLAYED_WITH_TEAM]->t-[:CONTESTED_IN]->league WITH player AS player, league.startDate AS startDate, league.name AS leagueName ORDER BY startDate RETURN player,  collect(leagueName) AS allParticipatedLeagues";
 
@@ -115,32 +119,52 @@ public class RegistrationController
 		Team team = teamRepo.findOne(selectedTeam);
 		model.addAttribute("teamName", team.getName());
 		model.addAttribute("players", players);
+		model.addAttribute("participatedInEarlierLeague", participatedInEarlierLeague);
+
 		return "registration/players";
 	}
 
 	@Transactional
 	@RequestMapping (value = "/newTeam", method = RequestMethod.POST)
 	public String newTeam(@RequestParam String teamName, @RequestParam String newTeamName,
-			@RequestParam ("players") List<String> ids, @RequestParam ("isCaptain") String captainName,
+			@RequestParam boolean participatedInEarlierLeague,
+			@RequestParam (value = "players", required = false) List<String> ids, @RequestParam ("isCaptain") String captainName,
 			@RequestParam ("newPlayer1") String newPlayer1, @RequestParam ("newPlayer2") String newPlayer2,
 			@RequestParam ("newPlayer3") String newPlayer3, @RequestParam ("newPlayer4") String newPlayer4,
 			@RequestParam ("newPlayer5") String newPlayer5, @RequestParam ("newPlayer6") String newPlayer6,
 			@RequestParam ("newPlayer7") String newPlayer7, @RequestParam ("newPlayer8") String newPlayer8, Model model)
 	{
+		LOG.debug("newTeamName: [{}]", newTeamName);
+		LOG.debug("teamName: [{}]", teamName);
+		LOG.debug("participatedInEarlierLeague: [{}]", participatedInEarlierLeague);
+		LOG.debug("captainName: [{}]", captainName);
+
 		List<Player> playerList = Lists.newArrayList();
 
-		if (StringUtils.isNotBlank(newTeamName))
+		if (!participatedInEarlierLeague)
 		{
-			LOG.debug("New name provided for the team: {}", newTeamName);
-			model.addAttribute("teamName", newTeamName.replaceAll(newTeamName, " "));
-
-			Team existingTeam = teamRepo.findByName(newTeamName);
-			if (existingTeam != null)
+			if (isTeamNameAlreadyInUse(newTeamName))
 			{
-				LOG.error("Team with the new name {} already exists {}", newTeamName, existingTeam);
+				return "registration/players";
 			}
-			model.addAttribute("renamedFromTeamName", teamName);
+			model.addAttribute("teamName", newTeamName);
 		}
+		else
+		{
+			if (StringUtils.isNotBlank(newTeamName))
+			{
+				LOG.debug("New name provided for the team: {}", newTeamName);
+
+				if (isTeamNameAlreadyInUse(newTeamName))
+				{
+					return "registration/players";
+				}
+
+				model.addAttribute("renamedFromTeamName", teamName);
+				model.addAttribute("teamName", newTeamName);
+			}
+		}
+
 		List<String> newPlayers = newPlayers(newPlayer1, newPlayer2, newPlayer3, newPlayer4, newPlayer5, newPlayer6, newPlayer7,
 				newPlayer8);
 
@@ -162,14 +186,27 @@ public class RegistrationController
 		}
 
 		// handle existing players
-		addExistingPlayers(ids, captainName, playerList);
+		if (!CollectionUtils.isEmpty(ids))
+		{
+			addExistingPlayers(ids, captainName, playerList);
+		}
 
-		model.addAttribute("teamName", newTeamName);
 		model.addAttribute("designatedCaptain", captainName);
 		model.addAttribute("matchedPlayers", matchedPlayers);
 		model.addAttribute("playerList", playerList);
 
 		return "registration/confirmation";
+	}
+
+	private boolean isTeamNameAlreadyInUse(String newTeamName)
+	{
+		Team existingTeam = teamRepo.findByName(newTeamName);
+		if (existingTeam != null)
+		{
+			LOG.error("Team with the new name {} already exists {}", newTeamName, existingTeam);
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -180,11 +217,16 @@ public class RegistrationController
 	 */
 	@Transactional
 	@RequestMapping (value = "/end", method = RequestMethod.POST)
-	public String end(@RequestParam String renamedFromTeamName, @ModelAttribute ("teamName") String teamName,
-			@ModelAttribute ("designatedCaptain") String designatedCaptain, @RequestParam ("playerIds") List<String> playerIds,
-			@ModelAttribute ("playerList") List<Player> playerList,
-			@ModelAttribute ("matchedPlayers") TreeMap<String, Collection<Player>> matchedPlayers, Model model)
+	public String end(@RequestParam (required = false) String renamedFromTeamName, @RequestParam String teamName,
+			@RequestParam boolean participatedInEarlierLeague, @ModelAttribute ("designatedCaptain") String designatedCaptain,
+			@RequestParam List<String> playerIds, @ModelAttribute List<Player> playerList,
+			@ModelAttribute TreeMap<String, Collection<Player>> matchedPlayers, Model model)
 	{
+		LOG.debug("renamedFromTeamName: [{}]", renamedFromTeamName);
+		LOG.debug("teamName: [{}]", teamName);
+		LOG.debug("participatedInEarlierLeague: [{}]", participatedInEarlierLeague);
+		LOG.debug("designatedCaptain: [{}]", designatedCaptain);
+
 		Set<Player> pls = new TreeSet<Player>(Player.NAME_CASE_INSENSITIVE_COMPARATOR);
 
 		// override playing eight if necessary
@@ -215,38 +257,44 @@ public class RegistrationController
 			team = new Team();
 			team.setName(teamName);
 
-			LOG.debug("{} hasn't participated in the earlier leagues, so create new and relate to the current league {}", team,
-					currentLeague);
+			LOG.debug("{} hasn't participated in the earlier leagues, so create new Team and relate to the current league {}",
+					team, currentLeague);
 			teamRepo.save(team);
 
 			for (Player p: pls)
 			{
+				// is new player?
 				if (p.getNodeId() == null)
 				{
 					LOG.debug("Before saving new {}", p);
 					playerRepo.save(p);
 					LOG.debug("After saving new {}", p);
 				}
-				createPlayedWithRelation(currentLeague, team, p);
+				createPlayedForInLeagueRelation(currentLeague, team, p);
 			}
 		}
 		else
 		{
-			LOG.debug("{} participated in the earlier leagues, so just has to relate to the current league {}", team, currentLeague);
+			LOG.debug("{} participated in the earlier leagues, so just has to relate the existing Team to the current league {}",
+					team, currentLeague);
 
 			for (Player p: pls)
 			{
-				createPlayedWithRelation(currentLeague, team, p);
+				LOG.debug("Before saving new {}", p);
+				playerRepo.save(p);
+				LOG.debug("After saving new {}", p);
+				createPlayedForInLeagueRelation(currentLeague, team, p);
 			}
 		}
 
-		Team previouslyKnownAs = teamRepo.findByName(renamedFromTeamName);
-		team.setPreviouslyKnownAs(previouslyKnownAs);
-		teamRepo.save(team);
-
-		LOG.debug("Final players: {}", team.getPlayers());
+		if (participatedInEarlierLeague && StringUtils.isNotBlank(renamedFromTeamName))
+		{
+			Team previouslyKnownAs = teamRepo.findByName(renamedFromTeamName);
+			team.setPreviouslyKnownAs(previouslyKnownAs);
+		}
 
 		currentLeague.addTeam(team);
+		teamRepo.save(team);
 
 		LOG.debug("Before saving final Team {}", team);
 		leagueRepo.save(currentLeague);
@@ -255,22 +303,38 @@ public class RegistrationController
 		return "registration/success";
 	}
 
-	private PlayedWith createPlayedWithRelation(League currentLeague, Team team, Player p)
+	private PlayerTeamLeague createPlayedForInLeagueRelation(League currentLeague, Team team, Player p)
 	{
-		LOG.debug("Creating PLAYED_WITH_TEAM relation between {} and {} for League {}", new Object[]{ team, p, currentLeague});
-		PlayedWith playedWith = template.createRelationshipBetween(p, team, PlayedWith.class, "PLAYED_WITH_TEAM", true);
-		playedWith.setDuring(currentLeague.getStartDate());
-		playedWith.setInLeague(currentLeague);
-		playedWith.setPlayer(p);
-		playedWith.setTeam(team);
-		playedWith.setAsCaptain(p.isCaptain());
+		// Map<String, Object> params = createParams(player);
+		//
+		// printRawQueryEngine(params);
+		// Result<Map<String, Object>> result = template.query(
+		// "start p=node({id}) match p-[r:PLAYED_WITH_TEAM]->team return r.during, id(r) order by r.during asc",
+		// params);
+		// result.handle(new Handler<Map<String, Object>>()
+		// {
+		// @Override
+		// public void handle(Map<String, Object> row)
+		// {
+		// System.out.println("BEFORE---------------------------------------------------------");
+		// LOG.debug("{}", row.get("r.during") + " - " + row.get("id(r)"));
+		// }
+		// });
 
-		template.save(playedWith);
+		PlayerTeamLeague playedForInleague = p.playedForInLeague(team, currentLeague.getStartDate(), currentLeague);
+		playedForInleague.setAsCaptain(p.isCaptain());
 
 		team.addPlayer(p);
+		template.save(p);
 
-		LOG.debug("Created relation: {}", playedWith);
-		return playedWith;
+		return playedForInleague;
+	}
+
+	private Map<String, Object> createParams(Player player)
+	{
+		Map<String, Object> params = Maps.newHashMap();
+		params.put("id", player.getNodeId());
+		return params;
 	}
 
 	private List<String> newPlayers(String newPlayer1, String newPlayer2, String newPlayer3, String newPlayer4, String newPlayer5,
@@ -356,15 +420,17 @@ public class RegistrationController
 			LOG.debug("Found exact match by First Name: [{}]", players);
 			return players;
 		}
-
-		result = playerRepo.findAllByQuery("lastName", p.getLastName());
-		players = IteratorUtil.asCollection(result);
-		if (players.size() > 0)
+		if (p.getLastName() != null)
 		{
-			LOG.debug("Found exact match by Last Name: [{}]", players);
-			return players;
+			LOG.debug("Ignoring exact match by Last Name as it is not available for : {}", p);
+			result = playerRepo.findAllByQuery("lastName", p.getLastName());
+			players = IteratorUtil.asCollection(result);
+			if (players.size() > 0)
+			{
+				LOG.debug("Found exact match by Last Name: [{}]", players);
+				return players;
+			}
 		}
-
 		String first3Characters = p.getName().substring(0, 3);
 		String searchString = first3Characters;
 		if (first3Characters.contains(" "))

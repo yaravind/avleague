@@ -23,20 +23,21 @@
 					<c:forEach items="${leagues}" var="league">
 						<td>
 							<p>
-								<strong>${league.name} - ${league.nodeId}</strong>
+								<strong><a href="${cp}/leagues/${league.name}">${league.name} - ${league.nodeId}</a></strong>
 							</p>
 							<p>
 								<em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em>
 							</p>
-							<p>
-								<c:if test="${not empty league.playedAt}">
-									<ul>
-										<c:forEach items="${league.playedAt}" var="venue">
-											<li>Played at <strong>${venue.name} - ${venue.nodeId}</strong></li>
-										</c:forEach>
-									</ul>
-								</c:if>
-								<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
+							<form action="${cp}/leagues/${league.name}" method="post">
+							<!--  TODO handle REST delete and put using  -->
+								<input type="hidden" name="_method" value="DELETE" /> <input type="submit" value="Cancel league"></input>
+							</form> <c:if test="${not empty league.playedAt}">
+								<ul>
+									<c:forEach items="${league.playedAt}" var="venue">
+										<li>Played at <strong>${venue.name} - ${venue.nodeId}</strong></li>
+									</c:forEach>
+								</ul>
+							</c:if> <a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
 							</p>
 							<p>
 								<strong><a href="${cp}/leagues/${league.name}/levels/">Levels</a></strong><br />
@@ -63,9 +64,13 @@
 									</ul>
 								</c:if>
 								<a href="${cp}/leagues/${league.name}/levelForm/">Add Level</a>
-							</p> 
-							<c:set var="teams" scope="request" value="${league.teams}"/>
-							<jsp:include page="teams/teamBrief.jsp" />
+							</p>
+							<p>Teams</p>
+							<ol>
+								<c:forEach items="${league.teams}" var="team">
+									<li><a href="${cp}/teams/${team.name}">${team.name}-${team.nodeId}</a></li>
+								</c:forEach>
+							</ol>
 						</td>
 					</c:forEach>
 				</tr>
