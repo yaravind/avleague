@@ -1,7 +1,5 @@
 package com.aravind.avl.domain;
 
-import static com.aravind.avl.domain.StringUtil.capitalizeFirstLetter;
-
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
@@ -9,15 +7,18 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.neo4j.graphdb.Direction;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
-import org.springframework.data.neo4j.annotation.RelatedToVia;
+import org.springframework.data.neo4j.annotation.RelatedTo;
 
 import com.google.common.base.Splitter;
+
+import static com.aravind.avl.domain.StringUtil.capitalizeFirstLetter;
 
 @NodeEntity
 public class Player
@@ -49,8 +50,8 @@ public class Player
 	// TODO: Temporarily ignoring since Jackson cannot serialize this to JSON
 	@JsonIgnore
 	@Fetch
-	@RelatedToVia
-	Set<PlayedWith> playedWith = new HashSet<PlayedWith>();
+	@RelatedTo (type = "PLAYED_FOR_IN_LEAGUE", direction = Direction.OUTGOING)
+	Set<PlayerTeamLeague> playedforInLeague = new HashSet<PlayerTeamLeague>();
 
 	/**
 	 * We doesn't want this to be saved in the Player nodes as this is a property of PlayedWith relationship.
@@ -72,20 +73,20 @@ public class Player
 	public Player()
 	{}
 
-	public PlayedWith playedWith(Team t, Date during, League inLeague)
+	public PlayerTeamLeague playedForInLeague(Team t, Date during, League inLeague)
 	{
-		PlayedWith playedWithTeamDuring = new PlayedWith(this, t, during, inLeague);
-		playedWith.add(playedWithTeamDuring);
+		PlayerTeamLeague ptl = new PlayerTeamLeague(t, during, inLeague, false);
+		playedforInLeague.add(ptl);
 
-		return playedWithTeamDuring;
+		return ptl;
 	}
 
-	public PlayedWith playedWithAsCaptain(Team t, Date during, League inLeague)
+	public PlayerTeamLeague playedForInLeagueAsCaptain(Team t, Date during, League inLeague)
 	{
-		PlayedWith playedWithTeamDuring = new PlayedWith(this, t, during, inLeague, true);
-		playedWith.add(playedWithTeamDuring);
+		PlayerTeamLeague ptl = new PlayerTeamLeague(t, during, inLeague, true);
+		playedforInLeague.add(ptl);
 
-		return playedWithTeamDuring;
+		return ptl;
 	}
 
 	public Long getNodeId()
@@ -101,6 +102,16 @@ public class Player
 	public String getName()
 	{
 		return name;
+	}
+
+	public Set<PlayerTeamLeague> getPlayedforInLeague()
+	{
+		return playedforInLeague;
+	}
+
+	public void setPlayedforInLeague(Set<PlayerTeamLeague> playedforInLeague)
+	{
+		this.playedforInLeague = playedforInLeague;
 	}
 
 	public void setName(String fullName)
@@ -151,11 +162,6 @@ public class Player
 		return phoneNumber;
 	}
 
-	public Set<PlayedWith> getPlayedWith()
-	{
-		return playedWith;
-	}
-
 	public Boolean getCaptain()
 	{
 		return captain;
@@ -181,26 +187,40 @@ public class Player
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
+		{
 			return true;
+		}
 		if (obj == null)
+		{
 			return false;
+		}
 		if (getClass() != obj.getClass())
+		{
 			return false;
+		}
 		Player other = (Player) obj;
 		if (name == null)
 		{
 			if (other.name != null)
+			{
 				return false;
+			}
 		}
 		else if (!name.equals(other.name))
+		{
 			return false;
+		}
 		if (nodeId == null)
 		{
 			if (other.nodeId != null)
+			{
 				return false;
+			}
 		}
 		else if (!nodeId.equals(other.nodeId))
+		{
 			return false;
+		}
 		return true;
 	}
 

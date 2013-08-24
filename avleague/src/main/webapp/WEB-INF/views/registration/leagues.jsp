@@ -11,6 +11,7 @@
 <body>
   <c:if test="${not empty pastLeagues}">
   	<form action="selectTeam" method="post">
+  	<input type="hidden" name="participatedInEarlierLeague" value="${participatedInEarlierLeague}"/>
       <c:forEach items="${pastLeagues}" var="league">
       	<h2>${league.name}</h2>
       	<p>Commenced on <fmt:formatDate type="date" value="${league.startDate}" /> and ended on <fmt:formatDate type="date" value="${league.endDate}" /></p>

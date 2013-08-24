@@ -7,15 +7,8 @@ out.println(request.getAttribute("teams"));
 %> --%>
 <c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
 
-<ol>
-	<c:forEach items="${teams}" var="team">
-		<li>
-			<p><a href="${cp}/teams/${team.name}">${team.name}-${team.nodeId}</a></p>
-			<ul>
-				<c:forEach items="${team.players}" var="player">
-					<li>${player.name}-${player.nodeId }</li>
-				</c:forEach>
-			</ul>
-		</li>
+<ul>
+	<c:forEach items="${team.players}" var="player">
+		<li>${player.name}-${player.nodeId }</li>
 	</c:forEach>
-</ol>
+</ul>

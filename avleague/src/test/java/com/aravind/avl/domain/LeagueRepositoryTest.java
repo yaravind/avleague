@@ -82,7 +82,7 @@ public class LeagueRepositoryTest
 		p.setName("Aravind Yarram");
 
 		teamA.addPlayer(p);
-		p.playedWith(teamA, l.getStartDate(), l);
+		p.playedForInLeague(teamA, l.getStartDate(), l);
 
 		teamB = new Team();
 		teamB.setName("Team B");

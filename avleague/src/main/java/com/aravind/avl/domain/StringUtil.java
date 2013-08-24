@@ -6,6 +6,6 @@ public class StringUtil
 {
 	public static String capitalizeFirstLetter(String str)
 	{
-		return WordUtils.capitalize(str);
+		return WordUtils.capitalize(str.trim());
 	}
 }
