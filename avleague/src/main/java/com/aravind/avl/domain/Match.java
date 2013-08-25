@@ -28,6 +28,19 @@ public class Match
 	@RelatedTo (type = "WINNER")
 	private Team winner;
 
+	@RelatedTo (type = "LOSER")
+	private Team loser;
+
+	public Team getLoser()
+	{
+		return loser;
+	}
+
+	public void setLoser(Team loser)
+	{
+		this.loser = loser;
+	}
+
 	@GraphProperty
 	private String name;
 
@@ -104,9 +117,9 @@ public class Match
 		this.playedOnCourt = playedOnCourt;
 	}
 
-	public void setWinner(Team winner)
+	public void setWinner(Team w)
 	{
-		this.winner = winner;
+		this.winner = w;
 	}
 
 	public Player getMvp()
@@ -114,9 +127,9 @@ public class Match
 		return mvp;
 	}
 
-	public void setMvp(Player mvp)
+	public void setMvp(Player m)
 	{
-		this.mvp = mvp;
+		this.mvp = m;
 	}
 
 	public Pool getPool()

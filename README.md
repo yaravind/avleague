@@ -15,6 +15,7 @@ Required
 
 Local Setup
 -----------
+* [Setup Eclipse to Pull/Push from GitHub] (http://wiki.eclipse.org/EGit/User_Guide#GitHub_Tutorial)
 * Import the avlleague project to eclipse (Import>Git>Projects from Git>URI>) 
 * Create the db directory for graph as **C:\home\neo4j-db**
 * **package tomcat7:run** using m2eclipse. This runs embedded Tomcat 7

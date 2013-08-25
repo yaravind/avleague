@@ -20,7 +20,7 @@
 		<level value="ERROR" />
 	</logger>	
 	<logger name="org.springframework.web">
-		<level value="ERROR" />
+		<level value="debug" />
 	</logger>
 	
 	<logger name="org.springframework.transaction">

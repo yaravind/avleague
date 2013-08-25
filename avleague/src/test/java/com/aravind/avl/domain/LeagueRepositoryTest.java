@@ -142,6 +142,9 @@ public class LeagueRepositoryTest
 		assertNotNull(m);
 		assertNotNull(m.getPool().getNodeId());
 		assertNotNull(m.getPlayedOnCourt().getNodeId());
+		assertNotNull(m.getWinner().getNodeId());
+		assertNotNull(m.getLoser().getNodeId());
+		assertNotNull(m.getMvp().getNodeId());
 		assertNotNull("Make sure match is saved when the league is saved", m.getNodeId());
 	}
 
@@ -168,8 +171,6 @@ public class LeagueRepositoryTest
 	@Test
 	public void findPoolWithNoMatches() throws ParseException
 	{
-		// Match m = buildMatch(l);
-		// m = matchRepo.save(m);
 		repo.save(l);
 
 		Pool result = repo.findPool(l.getName(), level.getName(), pool.getName());
@@ -223,6 +224,7 @@ public class LeagueRepositoryTest
 		m.setTime(df.parse("07-27-2013 13.30"));
 		m.setMvp(p);
 		m.setWinner(teamA);
+		m.setLoser(teamB);
 		return m;
 	}
 
