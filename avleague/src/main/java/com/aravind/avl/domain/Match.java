@@ -1,6 +1,8 @@
 package com.aravind.avl.domain;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.Fetch;
@@ -31,15 +33,14 @@ public class Match
 	@RelatedTo (type = "LOSER")
 	private Team loser;
 
-	public Team getLoser()
-	{
-		return loser;
-	}
+	@RelatedTo (type = "TEAM_A_PLAYING_6")
+	private Set<Player> teamAPlaying6 = new HashSet<Player>();
 
-	public void setLoser(Team loser)
-	{
-		this.loser = loser;
-	}
+	@RelatedTo (type = "TEAM_B_PLAYING_6")
+	private Set<Player> teamBPlaying6 = new HashSet<Player>();
+
+	@GraphProperty
+	private String comments;
 
 	@GraphProperty
 	private String name;
@@ -63,6 +64,46 @@ public class Match
 
 	public Match()
 	{}
+
+	public String getComments()
+	{
+		return comments;
+	}
+
+	public void setComments(String comments)
+	{
+		this.comments = comments;
+	}
+
+	public Set<Player> getTeamAPlaying6()
+	{
+		return teamAPlaying6;
+	}
+
+	public void setTeamAPlaying6(Set<Player> teamAPlaying6)
+	{
+		this.teamAPlaying6 = teamAPlaying6;
+	}
+
+	public Set<Player> getTeamBPlaying6()
+	{
+		return teamBPlaying6;
+	}
+
+	public void setTeamBPlaying6(Set<Player> teamBPlaying6)
+	{
+		this.teamBPlaying6 = teamBPlaying6;
+	}
+
+	public Team getLoser()
+	{
+		return loser;
+	}
+
+	public void setLoser(Team loser)
+	{
+		this.loser = loser;
+	}
 
 	public Match(Team team1, Team team2, Pool p)
 	{

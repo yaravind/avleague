@@ -20,34 +20,56 @@
 
 		<select name='teamA'>
 			<c:forEach items="${pool.teams}" var="team">
-				<option value="${team.nodeId}">${team.name}- ${team.nodeId}</option>
+				<option value="${team.nodeId}">${team.name}-${team.nodeId}</option>
 			</c:forEach>
 		</select>
 		<br />
-		
-		<label for="teamB">Team A </label>
-
+		<label for="teamAPlaying6">Playing 6 of Team A:</label>
+		<select name="teamAPlaying6" multiple="multiple" size="10">
+			<c:forEach items="${teamToPlayers}" var="entry">
+				<optgroup label="${entry.key}">
+					<c:forEach items="${entry.value}" var="player">
+						<option value="${player.nodeId }">${player.name}</option>
+					</c:forEach>
+				</optgroup>
+			</c:forEach>
+		</select
+		<br />
+		<label for="teamBPlaying6">Playing 6 of Team B:</label>	
+		<select name="teamBPlaying6" multiple="multiple" size="10">
+			<c:forEach items="${teamToPlayers}" var="entry">
+				<optgroup label="${entry.key}">
+					<c:forEach items="${entry.value}" var="player">
+						<option value="${player.nodeId }">${player.name}</option>
+					</c:forEach>
+				</optgroup>
+			</c:forEach>
+		</select>
+		<br />
+		<label for="teamB">Team B </label>
 		<select name='teamB'>
 			<c:forEach items="${pool.teams}" var="team">
-				<option value="${team.nodeId}">${team.name}- ${team.nodeId}</option>
+				<option value="${team.nodeId}">${team.name}-${team.nodeId}</option>
 			</c:forEach>
 		</select>
 		<br />
-		
 		<label for="venueAndCourt">Court where this match will be played on </label>
 		<select name='venueAndCourt'>
 			<c:forEach items="${venues}" var="venue">
 				<c:forEach items="${venue.courts}" var="court">
-					<option value="${venue.name} - ${court.name}">${venue.name} - ${court.name}</option>
+					<option value="${venue.name} - ${court.name}">${venue.name}- ${court.name}</option>
 				</c:forEach>
 			</c:forEach>
 		</select>
 		<br />
-		
+
 		<label for="time">Date and time for the match (MM-dd-yyyy HH:mm) HH = 0-23 </label>
 		<input name="time" />
 		<br />
 		<input type="submit" value="Add Match" />
+	
+	
+	
 	</f:form>
 </body>
 </html>
