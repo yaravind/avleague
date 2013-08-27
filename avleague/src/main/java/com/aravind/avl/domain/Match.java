@@ -1,5 +1,7 @@
 package com.aravind.avl.domain;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -8,8 +10,10 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
+import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
+import org.springframework.data.neo4j.support.index.IndexType;
 
 import com.google.common.base.Joiner;
 
@@ -43,6 +47,7 @@ public class Match
 	private String comments;
 
 	@GraphProperty
+	@Indexed (indexType = IndexType.FULLTEXT, indexName = "MatchName")
 	private String name;
 
 	@RelatedTo (type = "MVP")
@@ -59,11 +64,55 @@ public class Match
 	@RelatedTo (type = "PLAYED_ON")
 	private Court playedOnCourt;
 
+	@GraphProperty
+	private Integer teamAScore;
+
+	@GraphProperty
+	private Integer teamBScore;
+
 	@Transient
 	private static final transient Joiner NAME_MAKER = Joiner.on(" ");
 
+	@Transient
+	private static final transient DateFormat DF = new SimpleDateFormat("HH-mm");
+
 	public Match()
 	{}
+
+	public Match(Team team1, Team team2, Pool p, Date at)
+	{
+		teamA = team1;
+		teamB = team2;
+		pool = p;
+		time = at;
+		name = NAME_MAKER.join(teamA.getName(), "v", teamB.getName(), DF.format(time));
+	}
+
+	public Team getWinner()
+	{
+		if (winner != null)
+		{
+			return winner;
+		}
+		else if (teamAScore != null && teamBScore != null)
+		{
+			return teamAScore > teamBScore ? teamA : teamB;
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	public Integer getTeamAScore()
+	{
+		return teamAScore;
+	}
+
+	public Integer getTeamBScore()
+	{
+		return teamBScore;
+	}
 
 	public String getComments()
 	{
@@ -97,20 +146,23 @@ public class Match
 
 	public Team getLoser()
 	{
-		return loser;
+		if (loser != null)
+		{
+			return loser;
+		}
+		else if (teamAScore != null && teamBScore != null)
+		{
+			return teamAScore < teamBScore ? teamA : teamB;
+		}
+		else
+		{
+			return null;
+		}
 	}
 
 	public void setLoser(Team loser)
 	{
 		this.loser = loser;
-	}
-
-	public Match(Team team1, Team team2, Pool p)
-	{
-		teamA = team1;
-		teamB = team2;
-		pool = p;
-		name = NAME_MAKER.join(teamA.getName(), "v", teamB.getName());
 	}
 
 	public Long getNodeId()
@@ -141,11 +193,6 @@ public class Match
 	public void setTeamB(Team teamB)
 	{
 		this.teamB = teamB;
-	}
-
-	public Team getWinner()
-	{
-		return winner;
 	}
 
 	public Court getPlayedOnCourt()
@@ -273,5 +320,15 @@ public class Match
 	{
 		return "Match [nodeId=" + nodeId + ", teamA=" + teamA + ", teamB=" + teamB + ", winner=" + winner + ", name=" + name
 				+ ", mvp=" + mvp + ", pool=" + pool + ", time=" + time + ", playedOnCourt=" + playedOnCourt + "]";
+	}
+
+	public void setTeamAScore(Integer teamAScore)
+	{
+		this.teamAScore = teamAScore;
+	}
+
+	public void setTeamBScore(Integer teamBScore)
+	{
+		this.teamBScore = teamBScore;
 	}
 }

@@ -7,6 +7,7 @@ import org.neo4j.helpers.collection.IteratorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.conversion.EndResult;
 import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -36,7 +37,7 @@ public class TeamController
 	Neo4jTemplate template;
 
 	@RequestMapping (value = "/teams", method = RequestMethod.GET)
-	public String allTeams(Model model)
+	public String teams(Model model)
 	{
 		Iterable<Team> result = teamRepo.findAll();
 
@@ -50,10 +51,19 @@ public class TeamController
 	@RequestMapping (value = "/teams/{teamName}", method = RequestMethod.GET)
 	public String team(@PathVariable String teamName, Model model)
 	{
+		// try exact match
 		Team team = teamRepo.findByName(teamName);
+
+		// didnt find with exact match, use case-insensitive search
+		if (team == null)
+		{
+			LOG.debug("Didn't find with exact match, using case-insensitive search");
+			EndResult<Team> teams = teamRepo.findAllByQuery("TeamName", "name", teamName);
+			team = teams.single();
+		}
 		LOG.debug("Finding team with name {}: {}", teamName, team);
 
-		template.fetch(team.getPreviouslyKnownAs());
+		// template.fetch(team.getAliases());
 
 		List<String> leaguesContestedIn = teamRepo.findLeaguesContestedIn(teamName);
 		LOG.debug("Leagues contested in {}", leaguesContestedIn);

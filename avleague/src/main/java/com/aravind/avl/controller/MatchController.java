@@ -2,6 +2,7 @@ package com.aravind.avl.controller;
 
 import java.text.ParseException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -68,6 +69,7 @@ public class MatchController
 		model.addAttribute("league", leagueName);
 		model.addAttribute("pool", poolName);
 		model.addAttribute("level", levelName);
+
 		template.fetch(match.getWinner());
 		template.fetch(match.getMvp());
 
@@ -133,8 +135,19 @@ public class MatchController
 		}
 		else
 		{
+			Date at = null;
+
+			try
+			{
+				at = DateUtils.parseDate(time, new String[]{ "MM-dd-yyyy HH:mm"});
+			}
+			catch (ParseException e)
+			{
+				LOG.error("Can't set the time of the match", e);
+			}
+
 			match = league.conductMatch(teamRepo.findOne(teamA), teamRepo.findOne(teamB), venueByName.findCourtByName(courtName),
-					league.findLevelByName(levelName), pool);
+					league.findLevelByName(levelName), pool, at);
 
 			// Team A playing 6
 			Iterable<Player> playing6 = playerRepo.findAll(teamAPlaying6);
@@ -149,14 +162,6 @@ public class MatchController
 			match.setTeamBPlaying6(Sets.newHashSet(asCollection));
 		}
 
-		try
-		{
-			match.setTime(DateUtils.parseDate(time, new String[]{ "MM-dd-yyyy HH:mm"}));
-		}
-		catch (ParseException e)
-		{
-			LOG.error("Can't set the time of the match", e);
-		}
 		LOG.debug("Saving {}", match);
 		matchRepo.save(match);
 		LOG.debug("After save {}", match);
@@ -170,8 +175,10 @@ public class MatchController
 	@Transactional
 	@RequestMapping (value = "/matches/{matchName}", method = RequestMethod.POST)
 	public String matchResult(@PathVariable String leagueName, @PathVariable String levelName, @PathVariable String poolName,
-			@PathVariable String matchName, @RequestParam Long winner, @RequestParam Long mvp, @RequestParam String comments,
-			@RequestParam String subtitutions)
+			@PathVariable String matchName, @RequestParam (required = false) Long winner,
+			@RequestParam (required = false) Integer teamAScore, @RequestParam (required = false) Integer teamBScore,
+			@RequestParam Long mvp, @RequestParam (required = false) String comments,
+			@RequestParam (required = false) String subtitutions)
 	{
 		LOG.debug("Outcome winner: {}", winner);
 		LOG.debug("Outcome mvp: {}", mvp);
@@ -183,20 +190,28 @@ public class MatchController
 		Match match = leagueRepo.findMatch(leagueName, levelName, poolName, matchName);
 		LOG.debug("Found {}", match);
 
-		if (match.getTeamA().getNodeId().equals(winner))
+		if (winner != null)
 		{
-			match.setWinner(match.getTeamA());
-			match.setLoser(match.getTeamB());
-		}
-		else if (match.getTeamB().getNodeId().equals(winner))
-		{
-			match.setWinner(match.getTeamB());
-			match.setLoser(match.getTeamA());
+			if (match.getTeamA().getNodeId().equals(winner))
+			{
+				match.setWinner(match.getTeamA());
+				match.setLoser(match.getTeamB());
+			}
+			else if (match.getTeamB().getNodeId().equals(winner))
+			{
+				match.setWinner(match.getTeamB());
+				match.setLoser(match.getTeamA());
+			}
+			else
+			{
+				LOG.error("Unable to find the winning team with id [{}]. Team A [{}], Team B [{}]",
+						new Object[]{ winner, match.getTeamA(), match.getTeamB()});
+			}
 		}
 		else
 		{
-			LOG.error("Unable to find the winning team with id [{}]. Team A [{}], Team B [{}]",
-					new Object[]{ winner, match.getTeamA(), match.getTeamB()});
+			match.setTeamAScore(teamAScore);
+			match.setTeamBScore(teamBScore);
 		}
 		match.setMvp(playerRepo.findOne(mvp));
 		if (StringUtils.isNotBlank(comments))

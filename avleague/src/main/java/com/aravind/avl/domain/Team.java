@@ -13,6 +13,7 @@ import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.data.neo4j.annotation.RelatedTo;
+import org.springframework.data.neo4j.support.index.IndexType;
 
 @NodeEntity
 public class Team
@@ -21,7 +22,7 @@ public class Team
 	private Long nodeId;
 
 	@GraphProperty
-	@Indexed (unique = true)
+	@Indexed (indexType = IndexType.FULLTEXT, indexName = "TeamName", unique = true)
 	private String name;
 
 	@Fetch

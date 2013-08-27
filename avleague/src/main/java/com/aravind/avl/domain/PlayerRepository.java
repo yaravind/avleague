@@ -1,8 +1,9 @@
 package com.aravind.avl.domain;
 
 import org.springframework.data.neo4j.repository.GraphRepository;
+import org.springframework.data.neo4j.repository.NamedIndexRepository;
 
-public interface PlayerRepository extends GraphRepository<Player>
+public interface PlayerRepository extends GraphRepository<Player>, NamedIndexRepository<Player>
 {
 	/**
 	 * Can be used for EXACT matches and prefix matches

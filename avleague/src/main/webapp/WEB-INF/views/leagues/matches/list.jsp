@@ -11,10 +11,9 @@
 <title>Matches for Pool: ${poolName}</title>
 </head>
 <body>
-
 	<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
 
-	<a href="/avl">Home</a>
+	
 	<br />
 	<p>
 		Matches for Pool <big>${poolName}</big> of Level <big>${levelName}</big>

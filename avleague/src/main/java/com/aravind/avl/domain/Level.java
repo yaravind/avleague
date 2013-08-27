@@ -1,5 +1,6 @@
 package com.aravind.avl.domain;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,11 +43,11 @@ public class Level
 		name = StringUtil.capitalizeFirstLetter(n);
 	}
 
-	public Match conductMatch(Team teamA, Team teamB, Court court, Pool pool)
+	public Match conductMatch(Team teamA, Team teamB, Court court, Pool pool, Date at)
 	{
 		checkArgument(pools.contains(pool), "%s is not valid for the %s", pool, this);
 
-		Match m = new Match(teamA, teamB, pool);
+		Match m = new Match(teamA, teamB, pool, at);
 		m.setPlayedOn(court);
 		pool.conductMatch(m);
 

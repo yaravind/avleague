@@ -4,7 +4,7 @@
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
 <c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
-
+<a href="${cp}/leagues/">Home</a>
 <table border="1">
 	<c:if test="${not empty match}">
 		<tr valign="top">
@@ -13,7 +13,9 @@
 					<strong><a href="${cp}/leagues/${leagueName}/levels/${levelName}/pools/${poolName}/matches/${match.name}">${match.name} - ${match.nodeId}</a></strong>
 				</p>
 				<p>
-					Between <strong>${match.teamA.name}</strong> V <strong>${match.teamB.name}</strong>
+					<p>Between</p> 
+					<p>Team A: <strong>${match.teamA.name}</strong></p>
+				<p>Team B: <strong>${match.teamB.name}</strong></p>
 				</p>
 				<p>
 					at
@@ -23,6 +25,7 @@
 				<p>
 					on <strong>${match.playedOnCourt.name}</strong>
 				</p>
+				
 				<p>
 				<form action="${cp}/leagues/${leagueName}/levels/${levelName}/pools/${poolName}/matches/${match.name}" method="post">
 					<c:choose>
@@ -34,9 +37,14 @@
 								<option value="${match.teamB.nodeId}">${match.teamB.name}</option>
 							</select>
 							<br />
+							<label for="teamAScore">Team A Score</label>
+							<input type="text" name="teamAScore"/>
+							<br />
+							<label for="teamBScore">Team B Score:</label>
+							<input type="text" name="teamBScore"/>
 						</c:when>
 						<c:otherwise>
-							<p>Winner: ${match.winner.name}</p>
+							<p><strong>Winner:</strong> ${match.winner.name}. Score: <strong>${match.teamAScore} - ${match.teamBScore}</strong></p>
 						</c:otherwise>
 					</c:choose>
 					<c:choose>
@@ -57,7 +65,7 @@
 							<br />
 						</c:when>
 						<c:otherwise>
-							<p>Most valuable player (MVP): ${match.mvp.name}</p>
+							<p><strong>MVP</strong>: ${match.mvp.name}</p>
 						</c:otherwise>
 					</c:choose>
 					<c:choose>
@@ -69,8 +77,10 @@
 							<p>Comments: ${match.comments }</p>
 						</c:otherwise>
 					</c:choose>
-					<br /> <label for="subtitutions">Substitutions: </label> <input type="text" name="subtitutions" value="TODO ability to add substitutions" size="100" /> <br /> <input type="submit"
-						value="Submit">
+					<br /> 
+					<label for="subtitutions">Substitutions: </label> 
+					<input type="text" name="subtitutions" value="TODO ability to add substitutions" size="100" /> 
+					<br /> <input type="submit" value="Submit">
 				</form>
 				</p>
 			</td>

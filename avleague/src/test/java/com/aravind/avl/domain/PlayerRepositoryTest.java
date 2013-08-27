@@ -58,12 +58,18 @@ public class PlayerRepositoryTest
 		assertNotNull(save);
 		assertNotNull(p.getNodeId());
 
+		Player result = repo.findByName("A*");
+		assertNotNull("Starts with first letter match", result);
+
+		result = repo.findByName("aravind");
+		assertNotNull("Lower-case mathch", result);
+
+		// Can also use generic methods
 		EndResult<Player> players = repo.findAllByQuery("firstName", "A*");
 		assertNotNull("Starts with first letter match", players.single());
 
-		// TODO not supported
-		// players = repo.findAllByQuery("firstName", "aravind");
-		// assertNotNull("Lower-case mathch", players.single());
+		players = repo.findAllByQuery("FirstName", "firstName", "aravind");
+		assertNotNull("Lower-case mathch", players.single());
 	}
 
 	@Test
@@ -89,12 +95,12 @@ public class PlayerRepositoryTest
 		assertNotNull(save);
 		assertNotNull(p.getNodeId());
 
+		// Can also use generic methods
 		EndResult<Player> players = repo.findAllByQuery("lastName", "Y*");
 		assertNotNull("Starts with first letter match", players.single());
 
-		// TODO not supported
-		// players = repo.findAllByQuery("lastName", "yarram");
-		// assertNotNull("Lower-case mathch", players.single());
+		players = repo.findAllByQuery("lastName", "yarram");
+		assertNotNull("Lower-case mathch", players.single());
 	}
 
 	@Test
@@ -114,7 +120,7 @@ public class PlayerRepositoryTest
 	}
 
 	@Test
-	public void nameFullTextSearch()
+	public void NAMEFULLTEXTSEARCH()
 	{
 		Player save = repo.save(p);
 		assertNotNull(save);
@@ -123,6 +129,9 @@ public class PlayerRepositoryTest
 		Player p1 = new Player();
 		p1.setName("Aravind Y");
 		save = repo.save(p1);
+
+		Player byName = repo.findByName("aravind y");
+		assertNotNull(byName);
 
 		EndResult<Player> players = repo.findAllByQuery("name", "Aravind Y".substring(0, 4));
 		players.handle(new Handler<Player>()
@@ -190,10 +199,5 @@ public class PlayerRepositoryTest
 		assertNotNull(result);
 		template.fetch(result.getPlayedforInLeague());
 		assertEquals(2, result.getPlayedforInLeague().size());
-
-		for (PlayerTeamLeague pp: result.getPlayedforInLeague())
-		{
-			System.err.println(pp);
-		}
 	}
 }

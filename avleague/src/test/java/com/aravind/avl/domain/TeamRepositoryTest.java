@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.neo4j.helpers.collection.Iterables;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.neo4j.conversion.EndResult;
 import org.springframework.data.neo4j.template.Neo4jOperations;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
@@ -110,9 +111,13 @@ public class TeamRepositoryTest
 		Team team = teamRepo.findByName("Alpharetta One");
 		assertNotNull(team);
 
-		// TODO to add case insensitive search
-		// team = teamRepo.findByName("alpharetta One");
-		// assertNotNull(team);
+		team = teamRepo.findByName("alpharett*");
+		assertNotNull("Lower-case and regular expression", team);
+
+		EndResult<Team> teams = teamRepo.findAllByQuery("TeamName", "name", "alpharetta One");
+		Team single = teams.single();
+		assertNotNull(single);
+		assertEquals("Alpharetta One", single.getName());
 	}
 
 	@Test

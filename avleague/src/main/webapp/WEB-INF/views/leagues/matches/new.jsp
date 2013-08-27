@@ -11,6 +11,8 @@
 <title>New match for Pool ${pool.name}</title>
 </head>
 <body>
+	<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
+	<a href="${cp}/leagues/">Home</a>
 	<p>
 		Add new match for Pool <strong>${pool.name}</strong> of Level <strong>${level.name}</strong>
 	</p>
@@ -35,6 +37,13 @@
 			</c:forEach>
 		</select
 		<br />
+		<label for="teamB">Team B </label>
+		<select name='teamB'>
+			<c:forEach items="${pool.teams}" var="team">
+				<option value="${team.nodeId}">${team.name}-${team.nodeId}</option>
+			</c:forEach>
+		</select>
+		<br />
 		<label for="teamBPlaying6">Playing 6 of Team B:</label>	
 		<select name="teamBPlaying6" multiple="multiple" size="10">
 			<c:forEach items="${teamToPlayers}" var="entry">
@@ -45,14 +54,7 @@
 				</optgroup>
 			</c:forEach>
 		</select>
-		<br />
-		<label for="teamB">Team B </label>
-		<select name='teamB'>
-			<c:forEach items="${pool.teams}" var="team">
-				<option value="${team.nodeId}">${team.name}-${team.nodeId}</option>
-			</c:forEach>
-		</select>
-		<br />
+		<br />		
 		<label for="venueAndCourt">Court where this match will be played on </label>
 		<select name='venueAndCourt'>
 			<c:forEach items="${venues}" var="venue">
@@ -67,6 +69,7 @@
 		<input name="time" />
 		<br />
 		<input type="submit" value="Add Match" />
+	
 	
 	
 	

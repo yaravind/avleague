@@ -15,6 +15,7 @@ import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 import org.springframework.data.neo4j.annotation.RelatedTo;
+import org.springframework.data.neo4j.support.index.IndexType;
 
 import com.google.common.base.Splitter;
 
@@ -26,12 +27,12 @@ public class Player
 	@GraphId
 	private Long nodeId;
 
-	@Indexed (unique = true)
+	@Indexed (unique = true, indexType = IndexType.FULLTEXT, indexName = "PlayerName")
 	private String name;// Uses default index which is the name of the class.
 
 	@GraphProperty
-	@Indexed
-	// (indexType = IndexType.FULLTEXT, indexName = "playerName") enable custom
+	@Indexed (indexType = IndexType.FULLTEXT, indexName = "FirstName")
+	// enable custom
 	// index if we want to support
 	// case-insensitive search
 	private String firstName;
@@ -43,8 +44,7 @@ public class Player
 	private String phoneNumber;
 
 	@GraphProperty
-	@Indexed
-	// (indexType = IndexType.FULLTEXT, indexName = "playerName")
+	@Indexed (indexType = IndexType.FULLTEXT, indexName = "LastName")
 	private String lastName;
 
 	// TODO: Temporarily ignoring since Jackson cannot serialize this to JSON

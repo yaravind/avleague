@@ -35,11 +35,13 @@
 	</ul>
 
 	<h2>Aliases</h2>
-	<ul>
-		<c:forEach items="${team.aliases}" var="alias">
-			<li>${alias}</li>
-		</c:forEach>
-	</ul>
+	<c:if test="${not empty team.aliases}">
+		<ul>
+			<c:forEach items="${team.aliases}" var="alias">
+				<li>${alias}</li>
+			</c:forEach>
+		</ul>
+	</c:if>
 	<h2>Players</h2>
 	<ul>
 		<c:forEach items="${team.players}" var="player">

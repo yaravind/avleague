@@ -136,7 +136,8 @@ public class LeagueRepositoryTest
 		repo.save(l);
 		Match m = buildMatch(l);
 
-		assertEquals("Match name maker test", teamA.getName() + " v " + teamB.getName(), m.getName());
+		assertEquals("Match name maker test",
+				teamA.getName() + " v " + teamB.getName() + " " + new SimpleDateFormat("HH-mm").format(m.getTime()), m.getName());
 		m = matchRepo.save(m);
 
 		assertNotNull(m);
@@ -219,9 +220,9 @@ public class LeagueRepositoryTest
 	private Match buildMatch(League l) throws ParseException
 	{
 		SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy kk.mm");
-		Match m = l.conductMatch(teamA, teamB, get(v.getCourts(), 0), level, getOnlyElement(level.getPools()));
+		Match m = l.conductMatch(teamA, teamB, get(v.getCourts(), 0), level, getOnlyElement(level.getPools()),
+				df.parse("07-27-2013 13.30"));
 
-		m.setTime(df.parse("07-27-2013 13.30"));
 		m.setMvp(p);
 		m.setWinner(teamA);
 		m.setLoser(teamB);

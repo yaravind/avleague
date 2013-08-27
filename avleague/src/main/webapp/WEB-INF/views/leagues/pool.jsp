@@ -13,6 +13,8 @@
 <title>Pool - ${poolName}</title>
 </head>
 <body>
+	<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
+	<a href="${cp}/leagues/">Home</a>
 	<p>
 		<big>Teams</big>
 	</p>

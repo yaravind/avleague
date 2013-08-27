@@ -59,9 +59,9 @@ public class League implements Comparable<League>
 		endDate = leagueEndDate;
 	}
 
-	public Match conductMatch(Team teamA, Team teamB, Court court, Level l, Pool p)
+	public Match conductMatch(Team teamA, Team teamB, Court court, Level l, Pool p, Date at)
 	{
-		Match m = l.conductMatch(teamA, teamB, court, p);
+		Match m = l.conductMatch(teamA, teamB, court, p, at);
 		matches.add(m);
 		return m;
 	}

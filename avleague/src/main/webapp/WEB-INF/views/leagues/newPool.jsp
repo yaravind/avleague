@@ -11,16 +11,18 @@
 <title>Venue of the legaue.</title>
 </head>
 <body>
+	<c:set var="cp" value="${pageContext.request.contextPath}" scope="application" />
+	<a href="${cp}/leagues/">Home</a>
 	<p>
 		The <strong>${level.name}</strong> has below pools. Use the below form to add one more pool.
 
 		<ul>
 			<c:forEach items="${level.pools}" var="pool">
-				<li>${pool.name} - ${pool.nodeId}</li>
+				<li>${pool.name}- ${pool.nodeId}</li>
 				<c:if test="${not empty level.pools}">
 					<ul>
 						<c:forEach items="${pool.teams}" var="team">
-							<li>${team.name} - ${team.nodeId}</li>
+							<li>${team.name}- ${team.nodeId}</li>
 						</c:forEach>
 					</ul>
 				</c:if>
@@ -29,17 +31,12 @@
 	</p>
 
 	<form action="/avl/leagues/${league.name}/levels/${level.name}/pools" method="post">
-		<label for="poolName">New Pool </label> 
-		<input name="poolName" /> 
-		
-		<br/>
-		
-		<label for="teams">Select the teams that belong to this Pool</label>
+		<label for="poolName">New Pool </label> <input name="poolName" /> <br /> <label for="teams">Select the teams that belong to this Pool</label>
 		<c:choose>
 			<c:when test="${not empty league.teams}">
 				<select name='teams' multiple="multiple" size="25">
 					<c:forEach items="${league.teams}" var="team">
-						<option value="${team.nodeId}">${team.name} - ${team.nodeId}</option>
+						<option value="${team.nodeId}">${team.name}- ${team.nodeId}</option>
 					</c:forEach>
 				</select>
 			</c:when>
