@@ -8,6 +8,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class LeagueTest
 {
@@ -63,5 +64,51 @@ public class LeagueTest
 		assertEquals(level, allLevels.get(0));
 		assertEquals(qf, allLevels.get(1));
 		assertEquals(sf, allLevels.get(2));
+	}
+
+	@Test
+	public void individualAwards()
+	{
+		Award bestSpiker = addIndividualAward("best spiker", 11.35f);
+		l.addAward(bestSpiker);
+
+		assertFalse(bestSpiker.isTeamAward());
+		assertEquals("First letter upper case", "Best Spiker", bestSpiker.getAwardFor());
+		assertEquals(Float.valueOf(11.35f), Float.valueOf(bestSpiker.totalCost()));
+
+		Award bestBooster = addIndividualAward("best booster", 10.35f);
+		l.addAward(bestBooster);
+
+		assertEquals("First letter upper case", "Best Booster", bestBooster.getAwardFor());
+		assertEquals(Float.valueOf(10.35f), Float.valueOf(bestBooster.totalCost()));
+
+		assertEquals(2, l.getAwards().size());
+	}
+
+	@Test
+	public void teamAwards()
+	{
+		Award bestSpiker = addTeamAward("winner", 5.51f, (short) 8);
+		l.addAward(bestSpiker);
+
+		assertEquals(Float.valueOf(44.08f), Float.valueOf(bestSpiker.totalCost()));
+		assertEquals(1, l.getAwards().size());
+		assertTrue(bestSpiker.isTeamAward());
+	}
+
+	public Award addTeamAward(String awardFor, Float unitPrice, Short quantity)
+	{
+		Award a = new Award(awardFor);
+		a.setUnitPrice(unitPrice);
+		a.setQuantity(quantity);
+		return a;
+	}
+
+	public Award addIndividualAward(String awardFor, Float unitPrice)
+	{
+		Award a = new Award(awardFor);
+		a.setUnitPrice(unitPrice);
+		a.setQuantity((short) 1);
+		return a;
 	}
 }

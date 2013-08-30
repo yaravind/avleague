@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.aravind.avl.domain.Award;
 import com.aravind.avl.domain.Court;
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
@@ -74,8 +75,8 @@ public class LeagueController
 			{
 				template.fetch(level.getPools());
 			}
+			template.fetch(l.getAwards());
 		}
-
 		return "/leagues/list";
 	}
 
@@ -88,11 +89,12 @@ public class LeagueController
 
 		System.err.println(l.getPlayedAt());
 		template.fetch(l.getPlayedAt());
-		System.err.println(l.getPlayedAt());
+
 		for (Level level: l.getAllLevels())
 		{
 			template.fetch(level.getPools());
 		}
+
 		Map<String, List<Player>> teamToPlayers = Maps.newHashMap();
 		for (Team t: l.getTeams())
 		{
@@ -100,6 +102,8 @@ public class LeagueController
 			LOG.debug("For Team {} Players {}", t.getNodeId(), players);
 			teamToPlayers.put(t.getName(), players);
 		}
+
+		template.fetch(l.getAwards());
 
 		model.addAttribute("teamToPlayers", teamToPlayers);
 		model.addAttribute("league", l);
@@ -131,6 +135,28 @@ public class LeagueController
 		leagueRepo.save(newLeague);
 
 		return "redirect:" + newLeague.getName();
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/{leagueName}/awards", method = RequestMethod.POST)
+	public String awards(@PathVariable String leagueName, @RequestParam String awardFor, @RequestParam Float unitPrice,
+			@RequestParam Short quantity)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Found league: {}", l);
+
+		Award award = addAward(awardFor, unitPrice, quantity);
+		l.addAward(award);
+		l = leagueRepo.save(l);
+
+		return "redirect:/leagues/" + leagueName;
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/awards/awardForm", method = RequestMethod.GET)
+	public String awardForm(@PathVariable String leagueName, Model model)
+	{
+		model.addAttribute("leagueName", leagueName);
+		return "leagues/newAward";
 	}
 
 	@RequestMapping (value = "/leagues/{leagueName}/levels/{levelName}/pools/{poolName}/matchForm", method = RequestMethod.POST)
@@ -165,7 +191,7 @@ public class LeagueController
 	}
 
 	@RequestMapping (value = "/leagues/{leagueName}/venues", method = RequestMethod.GET)
-	public String venues(@PathVariable ("leagueName") String leagueName, Model model)
+	public String venues(@PathVariable String leagueName, Model model)
 	{
 		League l = leagueRepo.findByName(leagueName);
 		LOG.debug("Before fetch {}", l.getPlayedAt());
@@ -178,9 +204,8 @@ public class LeagueController
 
 	@Transactional
 	@RequestMapping (value = "/leagues/{leagueName}/venues", method = RequestMethod.POST)
-	public String venues(@RequestParam ("leagueName") String leagueName, @RequestParam ("venueName") String venue,
-			@RequestParam ("courtName1") String court1, @RequestParam ("courtName2") String court2,
-			@RequestParam ("courtName3") String court3, Model model)
+	public String venues(@RequestParam String leagueName, @RequestParam String venueName, @RequestParam String courtName1,
+			@RequestParam String courtName2, @RequestParam String courtName3, Model model)
 	{
 		League l = leagueRepo.findByName(leagueName);
 		template.fetch(l.getPlayedAt());
@@ -195,7 +220,7 @@ public class LeagueController
 
 			for (Venue v: venues)
 			{
-				if (v.getName().equalsIgnoreCase(venue))
+				if (v.getName().equalsIgnoreCase(venueName))
 				{
 					matchedVenue = v;
 					LOG.debug("Found matching venue {}", v);
@@ -209,7 +234,7 @@ public class LeagueController
 		}
 		else
 		{
-			l.addVenue(buildVenue(venue, court1, court2, court3));
+			l.addVenue(buildVenue(venueName, courtName1, courtName2, courtName3));
 		}
 
 		LOG.debug("Before linking the venue {}", l.getPlayedAt());
@@ -238,5 +263,14 @@ public class LeagueController
 			newVenue.addCourt(new Court(court3));
 		}
 		return newVenue;
+	}
+
+	private Award addAward(String awardFor, Float unitPrice, Short quantity)
+	{
+		Award a = new Award(awardFor);
+		a.setUnitPrice(unitPrice);
+		a.setQuantity(quantity);
+		template.save(a);
+		return a;
 	}
 }

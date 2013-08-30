@@ -28,10 +28,26 @@
 							<p>
 								<em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em>
 							</p>
+
 							<form action="${cp}/leagues/${league.name}" method="post">
-							<!--  TODO handle REST delete and put using  -->
+								<!--  TODO handle REST delete and put using  -->
 								<input type="hidden" name="_method" value="DELETE" /> <input type="submit" value="Cancel league"></input>
-							</form> <c:if test="${not empty league.playedAt}">
+							</form>
+
+							<p>
+								<strong>Awards</strong>
+							</p>
+							<p>
+								<c:if test="${not empty league.awards}">
+									<ul>
+										<c:forEach items="${league.awards}" var="award">
+											<li><strong>${award.awardFor} - ${award.nodeId}</strong> (<c:if test="${award.teamAward}">Team</c:if> <c:if test="${not award.teamAward}">Individual</c:if> award)</li>
+										</c:forEach>
+									</ul>
+								</c:if>
+								<a href="${cp}/leagues/${league.name}/awards/awardForm">Add Award</a> 
+							</p> 
+							<c:if test="${not empty league.playedAt}">
 								<ul>
 									<c:forEach items="${league.playedAt}" var="venue">
 										<li>Played at <strong>${venue.name} - ${venue.nodeId}</strong></li>

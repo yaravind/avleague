@@ -19,59 +19,74 @@
 
 	<table border="1">
 		<tr valign="top">
-				<td>
+			<td>
+				<p>
+					<strong>${league.name} - ${league.nodeId}</strong>
+				</p>
+				<p>
+					<em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em>
+				</p>
+				<p>
+					<strong>Awards</strong>
+				</p>
+				<p>
 					<p>
-						<strong>${league.name} - ${league.nodeId}</strong>
-					</p>
-					<p>
-						<em><fmt:formatDate type="date" value="${league.startDate}" /></em> - <em><fmt:formatDate type="date" value="${league.endDate}" /></em>
-					</p>
-					<p>
-						<c:if test="${not empty league.playedAt}">
+						<c:if test="${not empty league.awards}">
 							<ul>
-								<c:forEach items="${league.playedAt}" var="venue">
-									<li>Played at <strong>${venue.name} - ${venue.nodeId}</strong></li>
+								<c:forEach items="${league.awards}" var="award">
+									<li><strong>${award.awardFor} - ${award.nodeId}</strong> (<c:if test="${award.teamAward}">Team</c:if> <c:if test="${not award.teamAward}">Individual</c:if> award)</li>
 								</c:forEach>
 							</ul>
 						</c:if>
-						<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
+						<a href="${cp}/leagues/${league.name}/awards/awardForm">Add Award</a>
 					</p>
-					<p>
-						<strong><a href="${cp}/leagues/${league.name}/levels/">Levels</a></strong><br />
-						<c:if test="${not empty league.allLevels}">
-							<ul>
-								<c:forEach items="${league.allLevels}" var="level">
-									<li><strong>${level.name} - ${level.nodeId}</strong> <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools">Add Pool</a> <c:if test="${not empty level.pools}">
-											<ul>
-												<c:forEach items="${level.pools}" var="pool">
-													<li><a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}">Pool ${pool.name} - ${pool.nodeId}</a></li>
-													<ul>
-														<li>
-															<form id="myform" method="post" action="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matchForm">
-																<input type="submit" value="Create matches" />
-																<%-- <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches" onclick="this.parentNode.submit()">Create matches</a> --%>
-															</form>
-														</li>
-														<li><a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches/">List matches</a></li>
-													</ul>
-												</c:forEach>
-											</ul>
-										</c:if></li>
-								</c:forEach>
-							</ul>
-						</c:if>
-						<a href="${cp}/leagues/${league.name}/levelForm/">Add Level</a>
-					</p> <c:forEach items="${teamToPlayers}" var="entry">
-						<p>
-							<a href="${cp}/teams/${entry.key}">${entry.key}</a>
-						</p>
+				</p>
+				<p>
+					<c:if test="${not empty league.playedAt}">
 						<ul>
-							<c:forEach items="${entry.value}" var="player">
-								<li>${player.name}-${player.nodeId }</li>
+							<c:forEach items="${league.playedAt}" var="venue">
+								<li>Played at <strong>${venue.name} - ${venue.nodeId}</strong></li>
 							</c:forEach>
 						</ul>
-					</c:forEach>
-				</td>
+					</c:if>
+					<a href="${cp}/leagues/${league.name}/venues/">Add Venue</a>
+				</p>
+				<p>
+					<strong><a href="${cp}/leagues/${league.name}/levels/">Levels</a></strong><br />
+					<c:if test="${not empty league.allLevels}">
+						<ul>
+							<c:forEach items="${league.allLevels}" var="level">
+								<li><strong>${level.name} - ${level.nodeId}</strong> <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools">Add Pool</a> <c:if test="${not empty level.pools}">
+										<ul>
+											<c:forEach items="${level.pools}" var="pool">
+												<li><a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}">Pool ${pool.name} - ${pool.nodeId}</a></li>
+												<ul>
+													<li>
+														<form id="myform" method="post" action="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matchForm">
+															<input type="submit" value="Create matches" />
+															<%-- <a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches" onclick="this.parentNode.submit()">Create matches</a> --%>
+														</form>
+													</li>
+													<li><a href="${cp}/leagues/${league.name}/levels/${level.name}/pools/${pool.name}/matches/">List matches</a></li>
+												</ul>
+											</c:forEach>
+										</ul>
+									</c:if></li>
+							</c:forEach>
+						</ul>
+					</c:if>
+					<a href="${cp}/leagues/${league.name}/levelForm/">Add Level</a>
+				</p> <c:forEach items="${teamToPlayers}" var="entry">
+					<p>
+						<a href="${cp}/teams/${entry.key}">${entry.key}</a>
+					</p>
+					<ul>
+						<c:forEach items="${entry.value}" var="player">
+							<li>${player.name}-${player.nodeId }</li>
+						</c:forEach>
+					</ul>
+				</c:forEach>
+			</td>
 		</tr>
 	</table>
 </body>

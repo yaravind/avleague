@@ -49,6 +49,9 @@ public class League implements Comparable<League>
 	@RelatedTo (type = "PART_OF_LEAGUE", direction = INCOMING)
 	private Set<Match> matches = new HashSet<Match>();
 
+	@RelatedTo (type = "AWARD")
+	private final Set<Award> awards = new HashSet<Award>();
+
 	public League()
 	{}
 
@@ -76,6 +79,60 @@ public class League implements Comparable<League>
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * @param a always the persisted node entity
+	 */
+	public void addAward(Award a)
+	{
+		awards.add(a);
+	}
+
+	public Set<Award> getAwards()
+	{
+		return awards;
+	}
+
+	public Level findLevelByName(String name)
+	{
+		return findLevel(level, name);
+	}
+
+	public List<Level> getAllLevels()
+	{
+		List<Level> all = Lists.newArrayList();
+		return nextLevel(all, level);
+	}
+
+	private List<Level> nextLevel(List<Level> all, Level l)
+	{
+		if (l == null)
+		{
+			return all;
+		}
+		else
+		{
+			all.add(l);
+		}
+		return nextLevel(all, l.getNextLevel());
+	}
+
+	private Level findLevel(Level l, String name)
+	{
+		if (l == null)
+		{
+			return null;
+		}
+
+		if (l.getName().equals(name))
+		{
+			return l;
+		}
+		else
+		{
+			return findLevel(l.getNextLevel(), name);
+		}
 	}
 
 	public void addTeam(Team t)
@@ -232,46 +289,5 @@ public class League implements Comparable<League>
 	public void setLevel(Level level)
 	{
 		this.level = level;
-	}
-
-	public Level findLevelByName(String name)
-	{
-		return findLevel(level, name);
-	}
-
-	public List<Level> getAllLevels()
-	{
-		List<Level> all = Lists.newArrayList();
-		return nextLevel(all, level);
-	}
-
-	private List<Level> nextLevel(List<Level> all, Level l)
-	{
-		if (l == null)
-		{
-			return all;
-		}
-		else
-		{
-			all.add(l);
-		}
-		return nextLevel(all, l.getNextLevel());
-	}
-
-	private Level findLevel(Level l, String name)
-	{
-		if (l == null)
-		{
-			return null;
-		}
-
-		if (l.getName().equals(name))
-		{
-			return l;
-		}
-		else
-		{
-			return findLevel(l.getNextLevel(), name);
-		}
 	}
 }
