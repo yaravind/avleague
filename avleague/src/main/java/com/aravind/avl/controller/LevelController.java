@@ -19,6 +19,7 @@ import com.aravind.avl.domain.LeagueRepository;
 import com.aravind.avl.domain.Level;
 import com.aravind.avl.domain.LevelRepository;
 import com.aravind.avl.domain.Pool;
+import com.aravind.avl.domain.Team;
 import com.aravind.avl.domain.TeamRepository;
 import com.google.common.collect.Iterables;
 
@@ -130,8 +131,15 @@ public class LevelController
 		model.addAttribute("league", l);
 		Level level = l.findLevelByName(levelName);
 		template.fetch(level.getPools());
+
+		LOG.debug("Finding teams not in an pools of {}", level);
+		List<Team> teamsNotInAnyPool = leagueRepo.findTeamsNotInAnyPool(leagueName, levelName);
+		LOG.debug("Found {}", teamsNotInAnyPool);
+
 		LOG.debug("Found level {} with name", level, levelName);
 		model.addAttribute("level", level);
+		model.addAttribute("teamsNotYetInPools", teamsNotInAnyPool);
+
 		return "/leagues/newPool";
 	}
 

@@ -13,6 +13,7 @@ import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.aravind.avl.domain.Award;
+import com.aravind.avl.domain.Awardee;
 import com.aravind.avl.domain.Court;
 import com.aravind.avl.domain.League;
 import com.aravind.avl.domain.LeagueRepository;
@@ -75,7 +77,9 @@ public class LeagueController
 			{
 				template.fetch(level.getPools());
 			}
-			template.fetch(l.getAwards());
+			template.fetch(l.getIndividualAwards());
+			template.fetch(l.getTeamAwards());
+			template.fetch(l.getTeams());
 		}
 		return "/leagues/list";
 	}
@@ -87,15 +91,21 @@ public class LeagueController
 
 		League l = leagueRepo.findByName(leagueName);
 
-		System.err.println(l.getPlayedAt());
+		LOG.debug("Fetching PlayedAt");
 		template.fetch(l.getPlayedAt());
 
+		LOG.debug("Fetching Levels and Pools");
 		for (Level level: l.getAllLevels())
 		{
 			template.fetch(level.getPools());
 		}
 
+		LOG.debug("Fetching Teams");
+		template.fetch(l.getTeams());
+
 		Map<String, List<Player>> teamToPlayers = Maps.newHashMap();
+
+		LOG.debug("Fetching Players");
 		for (Team t: l.getTeams())
 		{
 			List<Player> players = teamRepo.findPlayers(t.getNodeId(), l.getNodeId());
@@ -103,7 +113,10 @@ public class LeagueController
 			teamToPlayers.put(t.getName(), players);
 		}
 
-		template.fetch(l.getAwards());
+		LOG.debug("Fetching Team Awards");
+		template.fetch(l.getTeamAwards());
+		LOG.debug("Fetching Individual Awards");
+		template.fetch(l.getIndividualAwards());
 
 		model.addAttribute("teamToPlayers", teamToPlayers);
 		model.addAttribute("league", l);
@@ -147,6 +160,54 @@ public class LeagueController
 
 		Award award = addAward(awardFor, unitPrice, quantity);
 		l.addAward(award);
+		l = leagueRepo.save(l);
+
+		return "redirect:/leagues/" + leagueName;
+	}
+
+	@RequestMapping (value = "/leagues/{leagueName}/awards/assignForm", method = RequestMethod.GET)
+	public String assignAwardsForm(@PathVariable String leagueName, Model model)
+	{
+		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Found league: {}", l);
+
+		template.fetch(l.getTeamAwards());
+		template.fetch(l.getIndividualAwards());
+		template.fetch(l.getTeams());
+		model.addAttribute("league", l);
+
+		if (!CollectionUtils.isEmpty(l.getIndividualAwards()))
+		{
+			// Retrieve players only if this league has individual awards
+			Map<String, List<Player>> teamToPlayers = Maps.newHashMap();
+			for (Team t: l.getTeams())
+			{
+				List<Player> players = teamRepo.findPlayers(t.getNodeId(), l.getNodeId());
+				teamToPlayers.put(t.getName(), players);
+			}
+			model.addAttribute("teamToPlayers", teamToPlayers);
+		}
+		return "/leagues/assignAwardsForm";
+	}
+
+	@Transactional
+	@RequestMapping (value = "/leagues/{leagueName}/awards/assign", method = RequestMethod.POST)
+	public String assignAwards(@PathVariable String leagueName, @RequestParam Map<String, String> allRequestParams)
+	{
+		LOG.debug("Request params: {}", allRequestParams);
+		League l = leagueRepo.findByName(leagueName);
+		LOG.debug("Found league: {}", l);
+		template.fetch(l.getTeamAwards());
+		template.fetch(l.getIndividualAwards());
+
+		for (Map.Entry<String, String> entry: allRequestParams.entrySet())
+		{
+			Award award = l.findAward(entry.getKey());
+			LOG.error("Couldn't find award for {}", entry.getKey());
+			Awardee awardee = template.findOne(Long.valueOf(entry.getValue()), Awardee.class);
+			award.setAwardedTo(awardee);
+			template.save(award);
+		}
 		l = leagueRepo.save(l);
 
 		return "redirect:/leagues/" + leagueName;

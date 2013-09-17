@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.neo4j.helpers.collection.Iterables;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.neo4j.conversion.EndResult;
 import org.springframework.data.neo4j.template.Neo4jOperations;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
@@ -77,11 +76,16 @@ public class TeamRepositoryTest
 		teamRepo.save(t);
 
 		Team result = teamRepo.findOne(t.getNodeId());
-		assertNotNull(result.getAliases());
+
+		List<String> findPreviouslyKnownAs = teamRepo.findPreviouslyKnownAs(result.getNodeId());
+
+		result.setAliases(findPreviouslyKnownAs);
+		assertNotNull("Should return empty List if no aliases are available", result.getAliases());
+		assertEquals(1, result.getAliases().size());
 		assertEquals(1, Iterables.count(result.getAliases()));
 
 		result = teamRepo.findOne(prev.getNodeId());
-		assertNotNull(result.getAliases());
+		result.setAliases(teamRepo.findPreviouslyKnownAs(result.getNodeId()));
 		assertEquals(1, Iterables.count(result.getAliases()));
 	}
 
@@ -106,18 +110,20 @@ public class TeamRepositoryTest
 	public void testFindByName()
 	{
 		teamRepo.save(t);
+
+		Team t2 = new Team();
+		t2.setName("Alpharetta");
+		teamRepo.save(t2);
+
 		assertNotNull(t.getNodeId());
 
 		Team team = teamRepo.findByName("Alpharetta One");
 		assertNotNull(team);
+		assertEquals("Alpharetta One", team.getName());
 
-		team = teamRepo.findByName("alpharett*");
+		team = teamRepo.findByName("Alpharetta");
 		assertNotNull("Lower-case and regular expression", team);
-
-		EndResult<Team> teams = teamRepo.findAllByQuery("TeamName", "name", "alpharetta One");
-		Team single = teams.single();
-		assertNotNull(single);
-		assertEquals("Alpharetta One", single.getName());
+		assertEquals("Alpharetta", team.getName());
 	}
 
 	@Test

@@ -39,7 +39,6 @@ public class League implements Comparable<League>
 	@RelatedTo (type = "LEVEL", direction = OUTGOING)
 	private Level level;
 
-	@Fetch
 	@RelatedTo (type = "CONTESTED_IN", direction = INCOMING)
 	private final Set<Team> teams = new HashSet<Team>();
 
@@ -49,8 +48,11 @@ public class League implements Comparable<League>
 	@RelatedTo (type = "PART_OF_LEAGUE", direction = INCOMING)
 	private Set<Match> matches = new HashSet<Match>();
 
-	@RelatedTo (type = "AWARD")
-	private final Set<Award> awards = new HashSet<Award>();
+	@RelatedTo (type = "TEAM_AWARD")
+	private final Set<Award> teamAwards = new HashSet<Award>();
+
+	@RelatedTo (type = "INDIVIDUAL_AWARD")
+	private final Set<Award> individualAwards = new HashSet<Award>();
 
 	public League()
 	{}
@@ -86,12 +88,14 @@ public class League implements Comparable<League>
 	 */
 	public void addAward(Award a)
 	{
-		awards.add(a);
-	}
-
-	public Set<Award> getAwards()
-	{
-		return awards;
+		if (a.isTeamAward())
+		{
+			teamAwards.add(a);
+		}
+		else
+		{
+			individualAwards.add(a);
+		}
 	}
 
 	public Level findLevelByName(String name)
@@ -133,6 +137,35 @@ public class League implements Comparable<League>
 		{
 			return findLevel(l.getNextLevel(), name);
 		}
+	}
+
+	public Award findAward(String awardFor)
+	{
+		for (Award a: teamAwards)
+		{
+			if (a.getAwardFor().equals(awardFor))
+			{
+				return a;
+			}
+		}
+		for (Award a: individualAwards)
+		{
+			if (a.getAwardFor().equals(awardFor))
+			{
+				return a;
+			}
+		}
+		return null;
+	}
+
+	public Set<Award> getTeamAwards()
+	{
+		return teamAwards;
+	}
+
+	public Set<Award> getIndividualAwards()
+	{
+		return individualAwards;
 	}
 
 	public void addTeam(Team t)

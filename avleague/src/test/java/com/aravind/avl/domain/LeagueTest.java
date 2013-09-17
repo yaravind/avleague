@@ -82,18 +82,18 @@ public class LeagueTest
 		assertEquals("First letter upper case", "Best Booster", bestBooster.getAwardFor());
 		assertEquals(Float.valueOf(10.35f), Float.valueOf(bestBooster.totalCost()));
 
-		assertEquals(2, l.getAwards().size());
+		assertEquals(2, l.getIndividualAwards().size());
 	}
 
 	@Test
 	public void teamAwards()
 	{
-		Award bestSpiker = addTeamAward("winner", 5.51f, (short) 8);
-		l.addAward(bestSpiker);
+		Award winner = addTeamAward("winner", 5.51f, (short) 8);
+		l.addAward(winner);
 
-		assertEquals(Float.valueOf(44.08f), Float.valueOf(bestSpiker.totalCost()));
-		assertEquals(1, l.getAwards().size());
-		assertTrue(bestSpiker.isTeamAward());
+		assertEquals(Float.valueOf(44.08f), Float.valueOf(winner.totalCost()));
+		assertEquals(1, l.getTeamAwards().size());
+		assertTrue(winner.isTeamAward());
 	}
 
 	public Award addTeamAward(String awardFor, Float unitPrice, Short quantity)

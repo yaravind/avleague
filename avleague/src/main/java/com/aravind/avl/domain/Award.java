@@ -1,9 +1,13 @@
 package com.aravind.avl.domain;
 
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.neo4j.annotation.Fetch;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.NodeEntity;
+import org.springframework.data.neo4j.annotation.RelatedTo;
+
+import static org.neo4j.graphdb.Direction.OUTGOING;
 
 @NodeEntity
 @TypeAlias (value = "Award")
@@ -23,6 +27,10 @@ public class Award
 	 */
 	@GraphProperty (defaultValue = "1")
 	private Short quantity = Short.valueOf((short) 1);
+
+	@Fetch
+	@RelatedTo (type = "AWARDED_TO", direction = OUTGOING)
+	private Awardee awardedTo;
 
 	public Award()
 	{}
@@ -80,6 +88,16 @@ public class Award
 	public void setAwardFor(String awardFor)
 	{
 		this.awardFor = awardFor;
+	}
+
+	public Awardee getAwardedTo()
+	{
+		return awardedTo;
+	}
+
+	public void setAwardedTo(Awardee awardedTo)
+	{
+		this.awardedTo = awardedTo;
 	}
 
 	@Override

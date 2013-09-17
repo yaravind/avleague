@@ -5,4 +5,6 @@ import java.util.List;
 public interface TeamRepositoryExtension
 {
 	List<League> findLeaguesLevelsAndPools(String teamName);
+
+	List<Player> findPlayers(String teamName);
 }

@@ -1,6 +1,7 @@
 package com.aravind.avl.domain;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,12 +12,11 @@ import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.GraphProperty;
 import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
-import org.springframework.data.neo4j.annotation.Query;
 import org.springframework.data.neo4j.annotation.RelatedTo;
 import org.springframework.data.neo4j.support.index.IndexType;
 
 @NodeEntity
-public class Team
+public class Team implements Awardee
 {
 	@GraphId
 	private Long nodeId;
@@ -35,7 +35,6 @@ public class Team
 	@RelatedTo (type = "PREVIOUSLY_KNOWN_AS")
 	private Team previouslyKnownAs;
 
-	@Query ("START t=node({self}) MATCH t-[:PREVIOUSLY_KNOWN_AS]-other RETURN other.name")
 	private List<String> aliases;
 
 	public Team()
@@ -44,6 +43,18 @@ public class Team
 	public List<String> getAliases()
 	{
 		return aliases;
+	}
+
+	public void setAliases(List<String> a)
+	{
+		if (a != null)
+		{
+			this.aliases = a;
+		}
+		else
+		{
+			aliases = Collections.emptyList();
+		}
 	}
 
 	public Team getPreviouslyKnownAs()

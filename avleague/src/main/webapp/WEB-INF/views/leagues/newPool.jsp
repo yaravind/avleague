@@ -33,9 +33,9 @@
 	<form action="/avl/leagues/${league.name}/levels/${level.name}/pools" method="post">
 		<label for="poolName">New Pool </label> <input name="poolName" /> <br /> <label for="teams">Select the teams that belong to this Pool</label>
 		<c:choose>
-			<c:when test="${not empty league.teams}">
+			<c:when test="${not empty teamsNotYetInPools}">
 				<select name='teams' multiple="multiple" size="25">
-					<c:forEach items="${league.teams}" var="team">
+					<c:forEach items="${teamsNotYetInPools}" var="team">
 						<option value="${team.nodeId}">${team.name}- ${team.nodeId}</option>
 					</c:forEach>
 				</select>

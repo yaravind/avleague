@@ -1,6 +1,5 @@
 package com.aravind.avl.controller;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -10,12 +9,15 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.PhraseQuery;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.neo4j.conversion.Handler;
-import org.springframework.data.neo4j.conversion.Result;
 import org.springframework.data.neo4j.support.Neo4jTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,9 +75,11 @@ public class RegistrationController
 			LOG.debug("Participated in earlier leagues. Retrieving the past league teams.");
 			Iterable<League> allLeagues = leagueRepo.findAll();
 			Set<League> sortedLeagues = new TreeSet<League>();
+
 			for (League l: allLeagues)
 			{
 				sortedLeagues.add(l);
+				model.addAttribute(l.getName(), leagueRepo.findTeams(l.getName()));
 			}
 			LOG.debug("Past leagues sorted by start date {}", sortedLeagues);
 			model.addAttribute("pastLeagues", sortedLeagues);
@@ -90,34 +94,14 @@ public class RegistrationController
 
 	@Transactional
 	@RequestMapping (value = "/selectTeam", method = RequestMethod.POST)
-	public String selectTeam(@RequestParam Long selectedTeam, @RequestParam boolean participatedInEarlierLeague, Model model)
+	public String selectTeam(@RequestParam String selectedTeam, @RequestParam boolean participatedInEarlierLeague, Model model)
 	{
-		String q = "START t=node({teamId}) MATCH player-[:PLAYED_WITH_TEAM]->t-[:CONTESTED_IN]->league WITH player AS player, league.startDate AS startDate, league.name AS leagueName ORDER BY startDate RETURN player,  collect(leagueName) AS allParticipatedLeagues";
-
 		LOG.debug("Participated as team {} in previous league", selectedTeam);
-		Map<String, Object> params = Maps.newHashMap();
-		params.put("teamId", selectedTeam);
 
-		Result<Map<String, Object>> result = template.query(q, params);
-
-		final List<Player> players = new ArrayList<Player>();
-
-		result.handle(new Handler<Map<String, Object>>()
-		{
-			@Override
-			public void handle(Map<String, Object> row)
-			{
-				// They cypher just returns a NodeProxy. You need to use convert to make it a domain entity
-				Player player = template.convert(row.get("player"), Player.class);
-
-				// row.get("allParticipatedLeagues")) returns List<String>
-				LOG.debug("All leagues the {} had participated in: {}", player, row.get("allParticipatedLeagues"));
-
-				players.add(player);
-			}
-		});
-		Team team = teamRepo.findOne(selectedTeam);
+		Team team = teamRepo.findByName(selectedTeam);
 		model.addAttribute("teamName", team.getName());
+
+		List<Player> players = teamRepo.findPlayers(team.getName());
 		model.addAttribute("players", players);
 		model.addAttribute("participatedInEarlierLeague", participatedInEarlierLeague);
 
@@ -289,6 +273,15 @@ public class RegistrationController
 
 		if (participatedInEarlierLeague && StringUtils.isNotBlank(renamedFromTeamName))
 		{
+			Index<Node> index = template.getIndex(Team.class, "name");
+			PhraseQuery phraseQuery = new PhraseQuery();
+			phraseQuery.add(new Term("name", renamedFromTeamName));
+			IndexHits<Node> hits = index.query(phraseQuery);
+			while (hits.hasNext())
+			{
+				System.err.println(hits.next());
+			}
+
 			Team previouslyKnownAs = teamRepo.findByName(renamedFromTeamName);
 			team.setPreviouslyKnownAs(previouslyKnownAs);
 		}
@@ -305,22 +298,6 @@ public class RegistrationController
 
 	private PlayerTeamLeague createPlayedForInLeagueRelation(League currentLeague, Team team, Player p)
 	{
-		// Map<String, Object> params = createParams(player);
-		//
-		// printRawQueryEngine(params);
-		// Result<Map<String, Object>> result = template.query(
-		// "start p=node({id}) match p-[r:PLAYED_WITH_TEAM]->team return r.during, id(r) order by r.during asc",
-		// params);
-		// result.handle(new Handler<Map<String, Object>>()
-		// {
-		// @Override
-		// public void handle(Map<String, Object> row)
-		// {
-		// System.out.println("BEFORE---------------------------------------------------------");
-		// LOG.debug("{}", row.get("r.during") + " - " + row.get("id(r)"));
-		// }
-		// });
-
 		PlayerTeamLeague playedForInleague = p.playedForInLeague(team, currentLeague.getStartDate(), currentLeague);
 		playedForInleague.setAsCaptain(p.isCaptain());
 
@@ -328,13 +305,6 @@ public class RegistrationController
 		template.save(p);
 
 		return playedForInleague;
-	}
-
-	private Map<String, Object> createParams(Player player)
-	{
-		Map<String, Object> params = Maps.newHashMap();
-		params.put("id", player.getNodeId());
-		return params;
 	}
 
 	private List<String> newPlayers(String newPlayer1, String newPlayer2, String newPlayer3, String newPlayer4, String newPlayer5,

@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -58,7 +59,10 @@ public class LeagueRepositoryTest
 	Venue v;
 
 	Level level;
+
 	Pool pool;
+
+	Award teamAward;
 
 	@Before
 	public void setUp() throws ParseException
@@ -112,6 +116,11 @@ public class LeagueRepositoryTest
 		Set<Venue> venues = new HashSet<Venue>();
 		venues.add(v);
 		l.setPlayedAt(venues);
+
+		teamAward = new Award("Winner");
+		teamAward.setQuantity((short) 8);
+		teamAward.setUnitPrice(12.35f);
+		l.addAward(teamAward);
 	}
 
 	@Test
@@ -254,7 +263,7 @@ public class LeagueRepositoryTest
 	}
 
 	@Test
-	public void testLevels()
+	public void levels()
 	{
 		repo.save(l);
 		assertNotNull(l.getLevel().getNodeId());
@@ -265,5 +274,25 @@ public class LeagueRepositoryTest
 		assertEquals("Order is important", "Playoffs", get(levels, 0).getName());
 		assertEquals("Order is important", "Quarterfinal", get(levels, 1).getName());
 		assertEquals("Order is important", "Semifinal", get(levels, 2).getName());
+	}
+
+	@Test
+	public void assignAward()
+	{
+		repo.save(l);
+
+		teamAward = Iterables.getOnlyElement(l.getTeamAwards());
+		teamAward.setAwardedTo(teamA);
+		repo.save(l);
+	}
+
+	@Test
+	public void findTeams()
+	{
+		repo.save(l);
+
+		List<String> teams = repo.findTeams(l.getName());
+		assertNotNull(teams);
+		assertEquals(2, teams.size());
 	}
 }

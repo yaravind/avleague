@@ -15,8 +15,8 @@
       <c:forEach items="${pastLeagues}" var="league">
       	<h2>${league.name}</h2>
       	<p>Commenced on <fmt:formatDate type="date" value="${league.startDate}" /> and ended on <fmt:formatDate type="date" value="${league.endDate}" /></p>
-      	<c:forEach items="${league.teams}" var="team">
-        	<p><input type="radio" name="selectedTeam"  value="${team.nodeId}"/> ${team.name}</p>
+      	<c:forEach items="${requestScope[league.name]}" var="teamName">
+        	<p><input type="radio" name="selectedTeam"  value="${teamName}"/> ${teamName}</p>
         </c:forEach>
       </c:forEach>
       <input type="submit" value="Submit">

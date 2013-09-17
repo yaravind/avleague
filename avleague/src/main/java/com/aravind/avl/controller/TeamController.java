@@ -61,7 +61,7 @@ public class TeamController
 			EndResult<Team> teams = teamRepo.findAllByQuery("TeamName", "name", teamName);
 			team = teams.single();
 		}
-		LOG.debug("Finding team with name {}: {}", teamName, team);
+		LOG.debug("Found team with name {}: {}", teamName, team);
 
 		// template.fetch(team.getAliases());
 
@@ -71,8 +71,13 @@ public class TeamController
 		List<League> leaguesWithLevels = teamRepo.findLeaguesLevelsAndPools(teamName);
 		LOG.debug("Leagues and Levels {}", leaguesWithLevels);
 
+		LOG.debug("Fetching previous names");
+		team.setAliases(teamRepo.findPreviouslyKnownAs(team.getNodeId()));
+
 		for (Player p: team.getPlayers())
 		{
+			LOG.debug("Fetching leagues played by {}", p.getName());
+			// Leagues played by each player
 			for (PlayerTeamLeague ptl: p.getPlayedforInLeague())
 			{
 				template.fetch(ptl.getInLeague());

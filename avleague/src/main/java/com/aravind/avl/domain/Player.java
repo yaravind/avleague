@@ -22,7 +22,7 @@ import com.google.common.base.Splitter;
 import static com.aravind.avl.domain.StringUtil.capitalizeFirstLetter;
 
 @NodeEntity
-public class Player
+public class Player implements Awardee
 {
 	@GraphId
 	private Long nodeId;
